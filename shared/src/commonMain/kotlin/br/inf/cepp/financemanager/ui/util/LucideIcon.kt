@@ -1,0 +1,72 @@
+package br.inf.cepp.financemanager.ui.util
+
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.composables.icons.lucide.Activity
+import com.composables.icons.lucide.Car
+import com.composables.icons.lucide.DollarSign
+import com.composables.icons.lucide.FileQuestionMark
+import com.composables.icons.lucide.Gamepad
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.House
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.ShoppingBag
+import com.composables.icons.lucide.ShoppingCart
+import com.composables.icons.lucide.Tv
+import com.composables.icons.lucide.Utensils
+import com.composables.icons.lucide.Wrench
+
+@Composable
+fun LucideIcon(
+    imageVector: ImageVector,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    // Defaults to whatever M3 token is active for
+    // text/foregrounds in the current context
+    tint: Color = LocalContentColor.current
+) {
+    Icon(
+        imageVector = imageVector,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
+}
+
+enum class LucideIcons(val vector: ImageVector) {
+    Utensils(Lucide.Utensils),
+    ShoppingCart(Lucide.ShoppingCart),
+    Heart(Lucide.Heart),
+    ShoppingBag(Lucide.ShoppingBag),
+    Tv(Lucide.Tv),
+
+    Wrench(Lucide.Wrench),
+
+    Car(Lucide.Car),
+
+    House(Lucide.House),
+
+    Activity(Lucide.Activity),
+
+    Gamepad(Lucide.Gamepad),
+
+    DollarSign(Lucide.DollarSign),
+
+    FileQuestionMark(Lucide.FileQuestionMark),
+
+    ;
+
+    companion object {
+        // Safe parsing: returns a fallback icon instead of crashing if the string is unknown
+        fun fromKey(key: String): LucideIcons {
+            return entries.firstOrNull { it.name == key } ?: FileQuestionMark
+        }
+
+    }
+}
+
+fun String.lucidIconVector() : ImageVector = LucideIcons.fromKey(this).vector
