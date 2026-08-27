@@ -34,7 +34,7 @@ fun OpenPreview() {
             Row {
                 Column {
                     PreviewAppTheme {
-                        FinanceDashboardScreen()
+                        FinanceDashboardScreen(onBackClick())
                     }
                 }
             }

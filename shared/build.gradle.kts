@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    // 👇 ADD THIS LINE TO ACTIVATE THE COMPILER EXTENSION
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -50,6 +52,14 @@ kotlin {
             implementation(libs.icons.lucide.cmp)
             // Napier logging - Using PlatformUtils for the moment
             // implementation(libs.napier)
+
+            implementation(libs.compose.material.icons)
+            //implementation(libs.androidx.navigation.compose)
+            implementation(libs.navigation.compose)
+
+            // 👇 ADD THIS EXPLICIT RUNTIME TO FIX DESKTOP COMPILE SPECIFICS
+            implementation(libs.kotlinx.serialization.json)
+
 
             // 👈 ADD THIS LINE: It tricks Gradle into pulling the sources artifact explicitly
             runtimeOnly("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0:sources")

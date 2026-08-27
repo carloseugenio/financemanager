@@ -9,13 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import br.inf.cepp.financemanager.model.monthlyExpensesData
+import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
 import br.inf.cepp.financemanager.ui.screen.FinanceDashboardScreen
+import br.inf.cepp.financemanager.ui.screen.MainAppNavigation
 import br.inf.cepp.financemanager.ui.screen.PreviewAppTheme
-import br.inf.cepp.financemanager.util.today
 
-@Composable
 @Preview
+@Composable
 fun App() {
     PreviewAppTheme {
         Column(
@@ -25,7 +25,7 @@ fun App() {
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            FinanceDashboardScreen()
+            MainAppNavigation()
         }
     }
 }

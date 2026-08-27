@@ -1,5 +1,9 @@
 package br.inf.cepp.financemanager.ui.screen
 
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,9 +16,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +34,67 @@ import br.inf.cepp.financemanager.util.today
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.TrendingDown
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+//import androidx.navigation.compose.NavHost
+//import androidx.navigation.compose.composable
+//import androidx.navigation.compose.rememberNavController
+import br.inf.cepp.financemanager.model.ExpenseCategory
+import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
+import br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState
+import com.composables.icons.lucide.Settings
+import kotlin.collections.emptyList
+
+@Composable
+fun MainAppNavigation() {
+    val navController = rememberNavController()
+    // Assuming your viewmodel exposes a StateFlow of your clean category entities
+    //val categories by viewModel.uiState.collectAsState(initial = emptyList<ExpenseCategory>())
+    // 💡 Use remember to retain the same instance across monitor context changes
+    val viewModel = remember { CategoriesViewModel() }
+
+    // 1. Collect the wrapper state. It will correctly infer the type as ExpenseCategoriesUiState
+    val uiState by viewModel.uiState.collectAsState()
+
+// 👇 Add this so data fetches exactly once when this layout mounts
+    LaunchedEffect(Unit) {
+        viewModel.fetchData()
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination = Screen.Dashboard
+    ) {
+        // 1. Dashboard Screen Destination
+        composable<Screen.Dashboard> {
+            FinanceDashboardScreen(
+                // Action triggered when the user taps a button to manage categories
+                onManageCategoriesClick = {
+                    navController.navigate(Screen.CategoryManager)
+                }
+            )
+        }
+
+        // 2. Category Manager Screen Destination
+        composable<Screen.CategoryManager> {
+            CategoryManagerScreen(
+                categories = when (val state = uiState) {
+                    is ExpenseCategoriesUiState.Success -> state.data
+                    else -> emptyList()
+                },
+                onBackClick = {
+                    navController.popBackStack() // Smoothly pops back to dashboard
+                },
+                onSaveNewCategory = { name, hexColor, iconKey ->
+                    viewModel.createNewCategory(name, hexColor, iconKey)
+                }
+            )
+        }
+    }
+}
 
 /**
  * Main screen Layout
@@ -36,7 +102,9 @@ import com.composables.icons.lucide.TrendingDown
  * This handles performance optimizations when dealing with large transaction sets.
  */
 @Composable
-fun FinanceDashboardScreen() {
+fun FinanceDashboardScreen(
+    onManageCategoriesClick: () -> Unit // 👈 1. Add this function callback parameter
+) {
     val viewData = monthlyExpensesData(today().month)
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -47,6 +115,16 @@ fun FinanceDashboardScreen() {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Category manager button
+            item {
+                // Example: Triggering it from a button click inside your dashboard layout
+                IconButton(onClick = onManageCategoriesClick) {
+                    Icon(
+                        imageVector = Lucide.Settings, // Or your current settings icon
+                        contentDescription = "Manage Categories"
+                    )
+                }
+            }
             // Top Purple Summary Card
             item { TopSummaryCard() }
 
@@ -86,8 +164,8 @@ fun FinanceDashboardScreen() {
                 }
             }
 
+            // Screen Section Card Block A: Planned Expenses
             item {
-                // Screen Section Card Block A: Planned Expenses
                 ExpenseSectionCard(
                     title = "Upcoming planned expenses",
                     sectionIcon = Lucide.Calendar,
@@ -96,8 +174,8 @@ fun FinanceDashboardScreen() {
                 )
             }
 
+            // Screen Section Card Block B: Recent Expenses
             item {
-                // Screen Section Card Block B: Recent Expenses
                 ExpenseSectionCard(
                     title = "Recent expenses",
                     sectionIcon = Lucide.TrendingDown,

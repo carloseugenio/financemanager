@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import br.inf.cepp.financemanager.model.ExpenseCategory
 import com.composables.icons.lucide.Activity
 import com.composables.icons.lucide.Car
 import com.composables.icons.lucide.DollarSign
@@ -16,6 +17,7 @@ import com.composables.icons.lucide.House
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.ShoppingBag
 import com.composables.icons.lucide.ShoppingCart
+import com.composables.icons.lucide.StepBack
 import com.composables.icons.lucide.Tv
 import com.composables.icons.lucide.Utensils
 import com.composables.icons.lucide.Wrench
@@ -56,6 +58,8 @@ enum class LucideIcons(val vector: ImageVector) {
 
     DollarSign(Lucide.DollarSign),
 
+    StepBack(Lucide.StepBack),
+
     FileQuestionMark(Lucide.FileQuestionMark),
 
     ;
@@ -70,3 +74,7 @@ enum class LucideIcons(val vector: ImageVector) {
 }
 
 fun String.lucidIconVector() : ImageVector = LucideIcons.fromKey(this).vector
+
+// 2. Computed UI Extensions
+val ExpenseCategory.icon: LucideIcons
+    get() = LucideIcons.fromKey(this.iconKey)

@@ -18,7 +18,7 @@ val allAccounts = listOf(
         HexColor("#FF0000"), LucideIcons.DollarSign.name)
 )
 
-val allCategories = listOf(
+val allCategories = mutableListOf(
     ExpenseCategory(name ="Grocery", color = HexColor("0xFFFACC15"), iconKey = LucideIcons.ShoppingCart.name),
     ExpenseCategory(name = "Health", color = HexColor("0xFFF87171"), iconKey = LucideIcons.Heart.name),
     ExpenseCategory(name ="Shopping", color = HexColor("0xFFFB923C"), iconKey = LucideIcons.ShoppingBag.name),
