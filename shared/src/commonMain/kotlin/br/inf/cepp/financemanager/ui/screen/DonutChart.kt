@@ -26,7 +26,7 @@ import br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData
 import br.inf.cepp.financemanager.ui.util.LucideIcon
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
 import androidx.compose.ui.platform.LocalLocale
-import br.inf.cepp.financemanager.model.totalExpensesWithCurrencySymbol
+import br.inf.cepp.financemanager.repository.totalExpensesWithCurrencySymbol
 import br.inf.cepp.financemanager.util.today
 
 /**

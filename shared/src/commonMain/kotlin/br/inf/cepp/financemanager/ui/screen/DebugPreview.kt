@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.inf.cepp.financemanager.model.monthlyExpensesData
+import br.inf.cepp.financemanager.repository.monthlyExpensesData
 import br.inf.cepp.financemanager.util.today
 
 val LocalDebugLog = staticCompositionLocalOf { { _: String -> } }

@@ -5,7 +5,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import br.inf.cepp.financemanager.model.monthlyExpensesData
+import br.inf.cepp.financemanager.repository.monthlyExpensesData
 import br.inf.cepp.financemanager.ui.screen.CategoryProgressRow
 import br.inf.cepp.financemanager.util.FakePlatformUtils
 import br.inf.cepp.financemanager.util.LocalPlatformUtils

@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import br.inf.cepp.financemanager.model.plannedExpenses
-import br.inf.cepp.financemanager.model.recentExpenses
+import br.inf.cepp.financemanager.repository.plannedExpenses
+import br.inf.cepp.financemanager.repository.recentExpenses
 import br.inf.cepp.financemanager.ui.components.ExpenseSectionCard
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Lucide

@@ -26,9 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.inf.cepp.financemanager.model.monthlyExpensesData
-import br.inf.cepp.financemanager.model.plannedExpenses
-import br.inf.cepp.financemanager.model.recentExpenses
+import br.inf.cepp.financemanager.repository.monthlyExpensesData
+import br.inf.cepp.financemanager.repository.plannedExpenses
+import br.inf.cepp.financemanager.repository.recentExpenses
 import br.inf.cepp.financemanager.ui.components.ExpenseSectionCard
 import br.inf.cepp.financemanager.util.today
 import com.composables.icons.lucide.Calendar
@@ -39,22 +39,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-//import androidx.navigation.compose.NavHost
-//import androidx.navigation.compose.composable
-//import androidx.navigation.compose.rememberNavController
 import br.inf.cepp.financemanager.model.ExpenseCategory
 import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
 import br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState
 import com.composables.icons.lucide.Settings
+import org.koin.compose.viewmodel.koinViewModel
 import kotlin.collections.emptyList
 
 @Composable
 fun MainAppNavigation() {
     val navController = rememberNavController()
-    // Assuming your viewmodel exposes a StateFlow of your clean category entities
-    //val categories by viewModel.uiState.collectAsState(initial = emptyList<ExpenseCategory>())
-    // 💡 Use remember to retain the same instance across monitor context changes
     val viewModel = remember { CategoriesViewModel() }
+    // Assuming your viewmodel exposes a StateFlow of your clean category entities
+    val categories by viewModel.uiState.collectAsState(initial = emptyList<ExpenseCategory>())
+    // Automatically injected, managed, and safe from monitor-move destruction!
+//    val viewModel: CategoriesViewModel = koinViewModel()
 
     // 1. Collect the wrapper state. It will correctly infer the type as ExpenseCategoriesUiState
     val uiState by viewModel.uiState.collectAsState()

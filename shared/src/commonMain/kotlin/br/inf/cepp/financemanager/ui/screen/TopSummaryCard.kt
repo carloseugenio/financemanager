@@ -23,10 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.inf.cepp.financemanager.model.allAccounts
-import br.inf.cepp.financemanager.model.confirmedExpensesInMonth
-import br.inf.cepp.financemanager.model.monthlyExpensesData
-import br.inf.cepp.financemanager.model.totalExpensesWithCurrencySymbol
+import br.inf.cepp.financemanager.repository.allAccounts
+import br.inf.cepp.financemanager.repository.confirmedExpensesInMonth
+import br.inf.cepp.financemanager.repository.monthlyExpensesData
+import br.inf.cepp.financemanager.repository.totalExpensesWithCurrencySymbol
 import br.inf.cepp.financemanager.ui.util.LucideIcon
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
 import br.inf.cepp.financemanager.util.today

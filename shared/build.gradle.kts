@@ -60,9 +60,23 @@ kotlin {
             // 👇 ADD THIS EXPLICIT RUNTIME TO FIX DESKTOP COMPILE SPECIFICS
             implementation(libs.kotlinx.serialization.json)
 
-
             // 👈 ADD THIS LINE: It tricks Gradle into pulling the sources artifact explicitly
             runtimeOnly("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0:sources")
+
+            // Dependency injection with Koin
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+
+            // Ktor
+            // Core Ktor Client and Engine
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
+            // Plugins for JSON content negotiation
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx)
+            // Logging
+            implementation(libs.ktor.client.logging)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

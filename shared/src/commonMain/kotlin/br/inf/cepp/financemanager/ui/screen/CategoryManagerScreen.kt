@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.inf.cepp.financemanager.model.ExpenseCategory
-import br.inf.cepp.financemanager.model.allCategories
+import br.inf.cepp.financemanager.repository.allCategories
 import br.inf.cepp.financemanager.ui.util.HexColor
 import br.inf.cepp.financemanager.ui.util.LucideIcon
 import br.inf.cepp.financemanager.ui.util.LucideIcons

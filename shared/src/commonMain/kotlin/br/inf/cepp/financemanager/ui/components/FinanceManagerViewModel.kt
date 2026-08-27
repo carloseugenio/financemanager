@@ -2,14 +2,15 @@ package br.inf.cepp.financemanager.ui.components
 
 import br.inf.cepp.financemanager.model.ExpenseCategory
 import br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData
-import br.inf.cepp.financemanager.model.allCategories
-import br.inf.cepp.financemanager.model.monthlyExpensesData
+import br.inf.cepp.financemanager.repository.allCategories
+import br.inf.cepp.financemanager.repository.monthlyExpensesData
 import br.inf.cepp.financemanager.ui.util.HexColor
 import br.inf.cepp.financemanager.util.today
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+
 
 // 1. Define your UI State Model
 sealed interface UiState {

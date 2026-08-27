@@ -1,4 +1,4 @@
-package br.inf.cepp.financemanager.model
+package br.inf.cepp.financemanager.repository
 
 import br.inf.cepp.financemanager.ui.util.LucideIcons
 import br.inf.cepp.financemanager.ui.util.lucidIconVector
@@ -6,23 +6,68 @@ import br.inf.cepp.financemanager.ui.util.HexColor
 import br.inf.cepp.financemanager.ui.util.toComposeColor
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
+import br.inf.cepp.financemanager.model.*
 
 val financeInstitutions = listOf(
-    FinanceInstitution(name =  "Brazil Bank", type = "Bank"),
-    FinanceInstitution(name = "Bradesco", type =  "Bank")
+    FinanceInstitution(
+        name = "Brazil Bank",
+        type = "Bank"
+    ),
+    FinanceInstitution(
+        name = "Bradesco",
+        type = "Bank"
+    )
 )
 val allAccounts = listOf(
-    Account(name = "Brazil Bank Account", AccountType.CHECKING, financeInstitutions[0], "1111", "11111111", "", 1000.0, 5, 100.0, HexColor("#FFFF00"),
-        LucideIcons.DollarSign.name),
-    Account(name = "Bradesco Account", AccountType.CHECKING, financeInstitutions[1], "2222", "2222222", "", 2000.0, 10, 300.0,
-        HexColor("#FF0000"), LucideIcons.DollarSign.name)
+    Account(
+        name = "Brazil Bank Account",
+        AccountType.CHECKING,
+        financeInstitutions[0],
+        "1111",
+        "11111111",
+        "",
+        1000.0,
+        5,
+        100.0,
+        HexColor("#FFFF00"),
+        LucideIcons.DollarSign.name
+    ),
+    Account(
+        name = "Bradesco Account",
+        AccountType.CHECKING,
+        financeInstitutions[1],
+        "2222",
+        "2222222",
+        "",
+        2000.0,
+        10,
+        300.0,
+        HexColor("#FF0000"),
+        LucideIcons.DollarSign.name
+    )
 )
 
 val allCategories = mutableListOf(
-    ExpenseCategory(name ="Grocery", color = HexColor("0xFFFACC15"), iconKey = LucideIcons.ShoppingCart.name),
-    ExpenseCategory(name = "Health", color = HexColor("0xFFF87171"), iconKey = LucideIcons.Heart.name),
-    ExpenseCategory(name ="Shopping", color = HexColor("0xFFFB923C"), iconKey = LucideIcons.ShoppingBag.name),
-    ExpenseCategory(name = "Entertainment", color = HexColor("0xFF818CF8"), iconKey = LucideIcons.Tv.name)
+    ExpenseCategory(
+        name = "Grocery",
+        color = HexColor("0xFFFACC15"),
+        iconKey = LucideIcons.ShoppingCart.name
+    ),
+    ExpenseCategory(
+        name = "Health",
+        color = HexColor("0xFFF87171"),
+        iconKey = LucideIcons.Heart.name
+    ),
+    ExpenseCategory(
+        name = "Shopping",
+        color = HexColor("0xFFFB923C"),
+        iconKey = LucideIcons.ShoppingBag.name
+    ),
+    ExpenseCategory(
+        name = "Entertainment",
+        color = HexColor("0xFF818CF8"),
+        iconKey = LucideIcons.Tv.name
+    )
 )
 
 val allExpenses = listOf(
@@ -169,25 +214,25 @@ val recentExpenses = listOf(
 )
 
 /**
- * Returns the total amount of expenses for thd given [Expense] list
+ * Returns the total amount of expenses for thd given [br.inf.cepp.financemanager.model.Expense] list
  */
-fun List<Expense>.amountTotal(): Double = this.sumOf { e -> e.amount }
+fun List<br.inf.cepp.financemanager.model.Expense>.amountTotal(): Double = this.sumOf { e -> e.amount }
 
 /**
- * Returns a list of expenses in [this] list which were [ExpenseStatus.CONFIRMED]
+ * Returns a list of expenses in [this] list which were [br.inf.cepp.financemanager.model.ExpenseStatus.CONFIRMED]
  */
-fun List<Expense>.confirmed(): List<Expense> = this.filter { e -> e.status == ExpenseStatus.CONFIRMED }
+fun List<br.inf.cepp.financemanager.model.Expense>.confirmed(): List<br.inf.cepp.financemanager.model.Expense> = this.filter { e -> e.status == ExpenseStatus.CONFIRMED }
 
 /**
  * Returns a list of expenses in [this] list which occurred on the given [Month]
  */
-fun List<Expense>.inMonth(month: Month): List<Expense> = this.filter { e -> e.date.month == month }
+fun List<br.inf.cepp.financemanager.model.Expense>.inMonth(month: Month): List<br.inf.cepp.financemanager.model.Expense> = this.filter { e -> e.date.month == month }
 
 /**
- * Returns a [List] of [MonthlyExpensePerCategoryViewData] representation for the given list
- * of [Expense].
+ * Returns a [List] of [br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData] representation for the given list
+ * of [br.inf.cepp.financemanager.model.Expense].
  */
-fun List<Expense>.monthlyPerCategoryViewData() : List<MonthlyExpensePerCategoryViewData> {
+fun List<br.inf.cepp.financemanager.model.Expense>.monthlyPerCategoryViewData() : List<br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData> {
     val totalAmount = this.sumOf { e -> e.amount }
     // Efficient single-pass summation
     val totalByCategory = this.groupingBy { it.category }
@@ -203,7 +248,7 @@ fun List<Expense>.monthlyPerCategoryViewData() : List<MonthlyExpensePerCategoryV
     }
 }
 
-fun monthlyExpensesData(month: Month): List<MonthlyExpensePerCategoryViewData> {
+fun monthlyExpensesData(month: Month): List<br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData> {
     // TODO: Go to fetch all expenses from local db
     return confirmedExpensesInMonth(month).monthlyPerCategoryViewData()
 }
@@ -212,4 +257,4 @@ fun totalExpensesWithCurrencySymbol(symbol: String, month: Month): String {
     return "$symbol ${confirmedExpensesInMonth(month).amountTotal()}"
 }
 
-fun confirmedExpensesInMonth(month: Month): List<Expense> = allExpenses.confirmed().inMonth(month)
+fun confirmedExpensesInMonth(month: Month): List<br.inf.cepp.financemanager.model.Expense> = allExpenses.confirmed().inMonth(month)
