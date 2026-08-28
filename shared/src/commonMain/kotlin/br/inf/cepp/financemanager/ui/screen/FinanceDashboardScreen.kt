@@ -1,9 +1,5 @@
 package br.inf.cepp.financemanager.ui.screen
 
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,45 +16,43 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import br.inf.cepp.financemanager.repository.monthlyExpensesData
 import br.inf.cepp.financemanager.repository.plannedExpenses
 import br.inf.cepp.financemanager.repository.recentExpenses
+import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
+import br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState
 import br.inf.cepp.financemanager.ui.components.ExpenseSectionCard
 import br.inf.cepp.financemanager.util.today
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.TrendingDown
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import br.inf.cepp.financemanager.model.ExpenseCategory
-import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
-import br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState
 import com.composables.icons.lucide.Settings
+import com.composables.icons.lucide.TrendingDown
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.collections.emptyList
 
 @Composable
 fun MainAppNavigation() {
     val navController = rememberNavController()
-    val viewModel = remember { CategoriesViewModel() }
-    // Assuming your viewmodel exposes a StateFlow of your clean category entities
-    val categories by viewModel.uiState.collectAsState(initial = emptyList<ExpenseCategory>())
-    // Automatically injected, managed, and safe from monitor-move destruction!
-//    val viewModel: CategoriesViewModel = koinViewModel()
 
-    // 1. Collect the wrapper state. It will correctly infer the type as ExpenseCategoriesUiState
+    // 🚀 RESOLVED VIA KOIN instead of remember
+    val viewModel: CategoriesViewModel = koinViewModel<CategoriesViewModel>()
+
+    // 1. Single source of state collection
     val uiState by viewModel.uiState.collectAsState()
 
-// 👇 Add this so data fetches exactly once when this layout mounts
+    // Fetch data exactly once when this layout mounts
     LaunchedEffect(Unit) {
         viewModel.fetchData()
     }
@@ -67,17 +61,14 @@ fun MainAppNavigation() {
         navController = navController,
         startDestination = Screen.Dashboard
     ) {
-        // 1. Dashboard Screen Destination
         composable<Screen.Dashboard> {
             FinanceDashboardScreen(
-                // Action triggered when the user taps a button to manage categories
                 onManageCategoriesClick = {
                     navController.navigate(Screen.CategoryManager)
                 }
             )
         }
 
-        // 2. Category Manager Screen Destination
         composable<Screen.CategoryManager> {
             CategoryManagerScreen(
                 categories = when (val state = uiState) {
@@ -85,7 +76,7 @@ fun MainAppNavigation() {
                     else -> emptyList()
                 },
                 onBackClick = {
-                    navController.popBackStack() // Smoothly pops back to dashboard
+                    navController.popBackStack()
                 },
                 onSaveNewCategory = { name, hexColor, iconKey ->
                     viewModel.createNewCategory(name, hexColor, iconKey)

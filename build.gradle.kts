@@ -16,7 +16,10 @@ plugins {
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
 //    alias(libs.plugins.serialization) apply false
+    alias(libs.plugins.koin.compiler) apply false
 }
+
+
 
 idea {
     module {

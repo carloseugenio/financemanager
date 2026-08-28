@@ -7,8 +7,15 @@ plugins {
     alias(libs.plugins.composeCompiler)
     // 👇 ADD THIS LINE TO ACTIVATE THE COMPILER EXTENSION
     kotlin("plugin.serialization")
+    // Koin compiler
+    alias(libs.plugins.koin.compiler)
 }
 
+koinCompiler {
+    userLogs = true
+    debugLogs = false
+    unsafeDslChecks = true
+}
 kotlin {
     jvm()
     
@@ -38,7 +45,13 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.kotlinx.datetime)
+
+            // Android-specific Koin extensions (if needed)
+            // They will automatically inherit the version from the commonMain BOM
+            implementation(libs.koin.android)
+//            implementation(libs.koin.android.workmanager)
         }
+
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -63,10 +76,18 @@ kotlin {
             // 👈 ADD THIS LINE: It tricks Gradle into pulling the sources artifact explicitly
             runtimeOnly("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0:sources")
 
-            // Dependency injection with Koin
+            ////////////////////////////////////////////////////////////////////////////////
+            // Koin - Dependency injection
+            implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
+            implementation(libs.koin.annotations)
+            implementation(libs.koin.core.viewmodel)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
+            implementation(libs.koin.compose.viewmodel.navigation)
+            implementation(libs.koin.ktor)
+            ////////////////////////////////////////////////////////////////////////////////
+
 
             // Ktor
             // Core Ktor Client and Engine
@@ -80,6 +101,10 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+
+            // Koin Tests
+            implementation(libs.koin.test)
+            implementation(libs.koin.test.junit5)
 
             // 2. Adds the core Compose UI Multiplatform Testing API 👈
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
