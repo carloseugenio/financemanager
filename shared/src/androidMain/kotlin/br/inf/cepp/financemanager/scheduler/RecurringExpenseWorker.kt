@@ -1,6 +1,7 @@
 package br.inf.cepp.financemanager.scheduler
 
 import android.content.Context
+import android.util.Log
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -10,11 +11,19 @@ import br.inf.cepp.financemanager.model.Expense
 import br.inf.cepp.financemanager.model.ExpenseStatus
 import br.inf.cepp.financemanager.model.RecurrenceFrequency
 import br.inf.cepp.financemanager.model.RecurrenceRule
+import br.inf.cepp.financemanager.model.RecurringExpenseState
 import br.inf.cepp.financemanager.util.today
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 
+/**
+ * Worker that materializes recurring expenses into confirmed expenses.
+ * - Loads only PLANNED expenses with recurrence (efficient query)
+ * - Uses timezone-safe LocalDate computation
+ * - Deduplicates by (source, date) tuple (idempotent)
+ * - Persists state: nextRunDate and remainingCount for reliable scheduling
+ * - Keeps reminder dispatch as an extension point hook
+ */
 class RecurringExpenseWorker(
     context: Context,
     params: WorkerParameters
@@ -24,57 +33,157 @@ class RecurringExpenseWorker(
         val database = buildDatabase()
         return try {
             val today = today()
-            val existingExpenses = database.expenseDao().getAll().first()
+            Log.d(TAG, "RecurringExpenseWorker doWork() starting at $today")
 
-            val dueExpenses = existingExpenses.filter { expense ->
-                expense.status == ExpenseStatus.PLANNED &&
-                        expense.recurrence != null &&
+            val recurringExpenses = database.expenseDao()
+                .getByStatusWithRecurrence(ExpenseStatus.PLANNED)
+            Log.d(TAG, "Loaded ${recurringExpenses.size} recurring expenses")
+
+            val allConfirmed = database.expenseDao()
+                .getByStatusSuspend(ExpenseStatus.CONFIRMED)
+
+            val dueExpenses = recurringExpenses.filter { expense ->
+                expense.recurrence != null &&
                         expense.date <= today &&
                         isDueOn(expense.date, today, expense.recurrence) &&
-                        !hasGeneratedExpenseForDate(existingExpenses, expense, today) &&
-                        isWithinOccurrenceCount(expense.date, today, expense.recurrence)
+                        isWithinOccurrenceCount(expense.date, today, expense.recurrence) &&
+                        !hasMaterializedExpenseForDate(allConfirmed, expense, today)
             }
 
-            dueExpenses.forEach { expense ->
-                database.expenseDao().insert(
-                    expense.copy(
-                        id = 0,
-                        date = today,
-                        status = ExpenseStatus.CONFIRMED
-                    )
+            Log.d(TAG, "Found ${dueExpenses.size} due recurring expenses to materialize")
+
+            dueExpenses.forEach { baseExpense ->
+                val materialized = baseExpense.copy(
+                    id = 0,
+                    date = today,
+                    status = ExpenseStatus.CONFIRMED
                 )
+                database.expenseDao().insert(materialized)
+                Log.d(TAG, "Materialized expense: ${baseExpense.description} on $today")
+
+                // Update state: compute next run date and remaining count
+                updateRecurringState(database, baseExpense, today)
+
+                // Extension point: dispatch reminder if configured
+                onReminderDispatch(materialized)
             }
 
+            Log.d(TAG, "RecurringExpenseWorker completed successfully")
             Result.success()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "RecurringExpenseWorker failed", e)
             Result.retry()
         } finally {
             database.close()
         }
     }
 
-    private fun buildDatabase(): AppDatabase {
-        return getDatabaseBuilder()
-            .setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
+    /**
+     * Updates RecurringExpenseState after materialization.
+     * Computes nextRunDate and decrements remainingCount.
+     */
+    private suspend fun updateRecurringState(
+        database: AppDatabase,
+        sourceExpense: Expense,
+        materializedDate: LocalDate
+    ) {
+        if (sourceExpense.recurrence == null || sourceExpense.id == 0L) {
+            return
+        }
+
+        val nextDate = computeNextRunDate(sourceExpense.date, materializedDate, sourceExpense.recurrence)
+        val remainingCount = if (sourceExpense.recurrence.count != null) {
+            val occurrenceNum = recurrenceOccurrenceNumber(sourceExpense.date, materializedDate, sourceExpense.recurrence)
+            sourceExpense.recurrence.count - occurrenceNum
+        } else {
+            null
+        }
+
+        val state = RecurringExpenseState(
+            sourceExpenseId = sourceExpense.id,
+            nextRunDate = nextDate,
+            remainingCount = remainingCount,
+            lastMaterializedDate = materializedDate
+        )
+
+        database.recurringExpenseStateDao().insert(state)
+        Log.d(TAG, "Updated recurring state for expense ${sourceExpense.id}: nextRun=$nextDate, remaining=$remainingCount")
     }
 
-    private fun hasGeneratedExpenseForDate(
-        allExpenses: List<Expense>,
+    /**
+     * Computes the next run date based on the recurrence rule.
+     */
+    private fun computeNextRunDate(
+        startDate: LocalDate,
+        lastDate: LocalDate,
+        rule: RecurrenceRule
+    ): LocalDate {
+        return when (rule.frequency) {
+            RecurrenceFrequency.DAILY -> {
+                val epochDay = lastDate.toEpochDays() + rule.interval
+                LocalDate.fromEpochDays(epochDay)
+            }
+            RecurrenceFrequency.WEEKLY -> {
+                val epochDay = lastDate.toEpochDays() + (7L * rule.interval)
+                LocalDate.fromEpochDays(epochDay)
+            }
+            RecurrenceFrequency.MONTHLY -> {
+                addMonthsToDate(lastDate, rule.interval)
+            }
+            RecurrenceFrequency.YEARLY -> {
+                LocalDate(
+                    lastDate.year + rule.interval,
+                    lastDate.monthNumber,
+                    lastDate.dayOfMonth
+                )
+            }
+        }
+    }
+
+    /**
+     * Add months to a date, handling day-of-month edge cases (e.g., Jan 31 + 1 month = Feb 28).
+     */
+    private fun addMonthsToDate(date: LocalDate, months: Int): LocalDate {
+        var newMonth = date.monthNumber + months
+        var newYear = date.year
+
+        while (newMonth > 12) {
+            newMonth -= 12
+            newYear++
+        }
+
+        val daysInMonth = getDaysInMonth(newMonth, newYear)
+        val newDay = minOf(date.dayOfMonth, daysInMonth)
+
+        return LocalDate(newYear, newMonth, newDay)
+    }
+
+    private fun getDaysInMonth(month: Int, year: Int): Int {
+        return when (month) {
+            1, 3, 5, 7, 8, 10, 12 -> 31
+            4, 6, 9, 11 -> 30
+            2 -> if (isLeapYear(year)) 29 else 28
+            else -> 28
+        }
+    }
+
+    private fun isLeapYear(year: Int): Boolean {
+        return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
+    }
+
+    /**
+     * Checks if a materialized expense already exists for the source + date tuple.
+     * This provides idempotent deduplication across multiple worker runs.
+     */
+    private fun hasMaterializedExpenseForDate(
+        confirmedExpenses: List<Expense>,
         baseExpense: Expense,
         targetDate: LocalDate
     ): Boolean {
-        return allExpenses.any { expense ->
-            expense.id != baseExpense.id &&
-                    expense.description == baseExpense.description &&
-                    expense.category == baseExpense.category &&
-                    expense.amount == baseExpense.amount &&
-                    expense.source == baseExpense.source &&
-                    expense.status == ExpenseStatus.CONFIRMED &&
-                    expense.recurrence == baseExpense.recurrence &&
-                    expense.reminder == baseExpense.reminder &&
-                    expense.date == targetDate
+        return confirmedExpenses.any { confirmed ->
+            confirmed.source == baseExpense.source &&
+                    confirmed.date == targetDate &&
+                    confirmed.category == baseExpense.category
         }
     }
 
@@ -158,5 +267,27 @@ class RecurringExpenseWorker(
                         targetDate.dayOfMonth == startDate.dayOfMonth
             }
         }
+    }
+
+    /**
+     * Extension point for reminder dispatch.
+     * Currently a no-op; enable when notification infra is in place.
+     */
+    private suspend fun onReminderDispatch(materialized: Expense) {
+        if (materialized.reminder?.enabled == true) {
+            Log.d(TAG, "Reminder configured but dispatch not yet implemented: ${materialized.description}")
+            // TODO: Dispatch reminder via NotificationManager or ReminderService when ready
+        }
+    }
+
+    private fun buildDatabase(): AppDatabase {
+        return getDatabaseBuilder()
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+    }
+
+    companion object {
+        private const val TAG = "RecurringExpenseWorker"
     }
 }

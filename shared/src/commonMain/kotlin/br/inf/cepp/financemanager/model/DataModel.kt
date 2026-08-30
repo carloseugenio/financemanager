@@ -127,6 +127,22 @@ data class Reminder(
     val destination: String? = null
 )
 
+/**
+ * Tracks state for recurring expenses across worker runs.
+ * Enables reliable scheduling: [nextRunDate] tells the worker when to next materialize,
+ * [remainingCount] tracks occurrences left (null = infinite).
+ */
+@Serializable
+@Entity(tableName = "recurring_expense_state", primaryKeys = ["sourceExpenseId"])
+data class RecurringExpenseState(
+    val sourceExpenseId: Long,  // FK to original PLANNED expense
+    @Serializable(with = SafeLocalDateSerializer::class)
+    val nextRunDate: LocalDate, // next date to materialize
+    val remainingCount: Int? = null, // null = infinite, 0 = complete
+    @Serializable(with = SafeLocalDateSerializer::class)
+    val lastMaterializedDate: LocalDate? = null // for audit/debugging
+)
+
 @Serializable
 @Entity(tableName = "expense_categories")
 data class ExpenseCategory(

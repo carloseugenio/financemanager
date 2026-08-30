@@ -31,7 +31,7 @@ Single user (personal use). A single role: the authenticated user, who has full 
 
 ### Monthly Dashboard:
 
-- User opens the app → views dashboard showing total spending for the current month, a donut chart by category (with percentages and colored icons), a list of incurred expenses grouped by category, and a section for upcoming planned expenses (with dates and amounts).
+- User opens the app → views dashboard showing total spending for the current month, a donut chart by category (with percentages and personalized icons), a list of incurred expenses grouped by category, and a section for upcoming planned expenses (with dates and amounts).
 
 ### Statement Import:
 
@@ -53,7 +53,7 @@ Single user (personal use). A single role: the authenticated user, who has full 
 
 ### Category analysis:
 
-- User accesses the categories screen → views a donut chart + detailed list of spending by category for the selected month → can navigate between periods (monthly) → each category displays a colored icon, total spent, and percentage of the total.
+- User accesses the categories screen → views a donut chart + detailed list of spending by category for the selected month → can navigate between periods (monthly) → each category displays an icon, total spent, and percentage of the total.
 
 ### Project planning:
 
@@ -88,14 +88,7 @@ Single user (personal use). A single role: the authenticated user, who has full 
 
 ## Design Preferences
 
-- Colorful, friendly visual style typical of personal finance apps (references: Mobills, Organizze).
-- Each category features a unique SVG icon and distinct color (food: orange, transport: blue, health: green, leisure: purple, etc.).
-- Light background with rounded white cards and soft shadows.
-- Vibrant donut charts.
-- Modern sans-serif typography with a clear size hierarchy.
-- Buttons in a vibrant primary color (e.g., #4F46E5 indigo or #10B981 green).
-- Bottom navigation with 5 icons: Dashboard, Import, Reconcile, Categories, Projects.
-- Smooth micro-interactions on cards. Mobile-first responsive layout.
+> TODO: Insert new design preferences
 
 ## Schema changes
 

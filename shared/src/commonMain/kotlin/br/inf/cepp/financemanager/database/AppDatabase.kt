@@ -16,8 +16,9 @@ import br.inf.cepp.financemanager.repository.*
         ProjectPlan::class,
         ProjectItem::class,
         FinanceInstitution::class,
+        RecurringExpenseState::class,
     ],
-    version = 3
+    version = 4
 )
 @TypeConverters(DatabaseConverters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -28,4 +29,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun expenseCategoryDao(): ExpenseCategoryDao
     abstract fun expenseItemDao(): ExpenseItemDao
     abstract fun projectDao(): ProjectDao
+    abstract fun recurringExpenseStateDao(): RecurringExpenseStateDao
 }

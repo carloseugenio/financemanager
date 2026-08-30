@@ -36,6 +36,12 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE status = :status ORDER BY date DESC")
     fun getByStatus(status: ExpenseStatus): Flow<List<Expense>>
 
+    @Query("SELECT * FROM expenses WHERE status = :status ORDER BY date DESC")
+    suspend fun getByStatusSuspend(status: ExpenseStatus): List<Expense>
+
     @Query("DELETE FROM expenses")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM expenses WHERE status = :status AND rec_frequency IS NOT NULL ORDER BY date ASC")
+    suspend fun getByStatusWithRecurrence(status: ExpenseStatus): List<Expense>
 }
