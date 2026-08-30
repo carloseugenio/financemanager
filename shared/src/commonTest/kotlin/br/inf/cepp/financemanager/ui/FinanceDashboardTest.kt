@@ -5,11 +5,12 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import br.inf.cepp.financemanager.repository.monthlyExpensesData
+import br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData
 import br.inf.cepp.financemanager.ui.screen.CategoryProgressRow
 import br.inf.cepp.financemanager.util.FakePlatformUtils
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
-import br.inf.cepp.financemanager.util.today
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 
 class FinanceDashboardTest {
 
@@ -27,7 +28,13 @@ class FinanceDashboardTest {
             CompositionLocalProvider(LocalPlatformUtils provides fakeUtils) {
                 // Pass sample mock values to the UI row component we built earlier
                 CategoryProgressRow(
-                    category = monthlyExpensesData(today().month)[0]
+                    category = MonthlyExpensePerCategoryViewData(
+                        name = "Moradia",
+                        amount = 1800.0,
+                        percentage = 78.0,
+                        color = androidx.compose.ui.graphics.Color(0xFF4F46E5),
+                        icon = Icons.Filled.Home
+                    )
                 )
             }
         }

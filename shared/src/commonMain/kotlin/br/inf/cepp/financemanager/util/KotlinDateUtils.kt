@@ -12,8 +12,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.time.Clock
 
-class KotlinDateUtils {
-}
+class KotlinDateUtils
 
 // Pull today's date safely anywhere across Android, iOS, or Desktop
 fun today() = Clock.System.todayIn(TimeZone.currentSystemDefault())

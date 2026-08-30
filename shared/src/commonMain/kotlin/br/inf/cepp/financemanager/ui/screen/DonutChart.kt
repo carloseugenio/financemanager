@@ -26,7 +26,6 @@ import br.inf.cepp.financemanager.model.MonthlyExpensePerCategoryViewData
 import br.inf.cepp.financemanager.ui.util.LucideIcon
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
 import androidx.compose.ui.platform.LocalLocale
-import br.inf.cepp.financemanager.repository.totalExpensesWithCurrencySymbol
 import br.inf.cepp.financemanager.util.today
 
 /**
@@ -34,12 +33,8 @@ import br.inf.cepp.financemanager.util.today
  * slice out percentages calculated directly from standard double values.
  */
 @Composable
-fun DonutChart (categories: List<MonthlyExpensePerCategoryViewData>) {
+fun DonutChart(categories: List<MonthlyExpensePerCategoryViewData>, selectedMonth: kotlinx.datetime.Month = today().month) {
     val utils = LocalPlatformUtils.current
-    val totalSpent = totalExpensesWithCurrencySymbol(
-        utils.getCurrentCurrencySymbol(),
-        today().month
-    )
     val logger = LocalDebugLog.current
     val totalPercentage = categories.sumOf { c -> c.percentage }
 //    logger("Drawing DonutChart. TotalPercentage: [$totalPercentage]")
@@ -64,7 +59,7 @@ fun DonutChart (categories: List<MonthlyExpensePerCategoryViewData>) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("TOTAL", fontSize = 10.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
-            Text(totalSpent, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("—", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         }
     }
 }

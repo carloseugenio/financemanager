@@ -23,10 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.inf.cepp.financemanager.repository.allAccounts
-import br.inf.cepp.financemanager.repository.confirmedExpensesInMonth
-import br.inf.cepp.financemanager.repository.monthlyExpensesData
-import br.inf.cepp.financemanager.repository.totalExpensesWithCurrencySymbol
 import br.inf.cepp.financemanager.ui.util.LucideIcon
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
 import br.inf.cepp.financemanager.util.today
@@ -38,13 +34,14 @@ import com.composables.icons.lucide.TrendingUp
  * to easily handle different dynamic screen widths.
  */
 @Composable
-fun TopSummaryCard() {
+fun TopSummaryCard(
+    totalSpent: String,
+    transactionCount: Int,
+    categoryCount: Int,
+    accountCount: Int
+) {
     // Access the current implementation of PlatformUtils interface
     val utils = LocalPlatformUtils.current
-    val totalSpent = totalExpensesWithCurrencySymbol(
-        utils.getCurrentCurrencySymbol(),
-        today().month
-    )
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -82,9 +79,9 @@ fun TopSummaryCard() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                MetricSubItem(label = "Transactions", value = "${confirmedExpensesInMonth(today().month).size}", modifier = Modifier.weight(1f))
-                MetricSubItem(label = "Categories", value = "${monthlyExpensesData(today().month).size}", modifier = Modifier.weight(1f))
-                MetricSubItem(label = "Accounts", value = "${allAccounts.size}", modifier = Modifier.weight(1f))
+                MetricSubItem(label = "Transactions", value = "$transactionCount", modifier = Modifier.weight(1f))
+                MetricSubItem(label = "Categories", value = "$categoryCount", modifier = Modifier.weight(1f))
+                MetricSubItem(label = "Accounts", value = "$accountCount", modifier = Modifier.weight(1f))
             }
         }
     }

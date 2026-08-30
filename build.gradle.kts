@@ -17,6 +17,12 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
 //    alias(libs.plugins.serialization) apply false
     alias(libs.plugins.koin.compiler) apply false
+
+//    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.google.devtools.ksp) apply false
+    alias(libs.plugins.room) apply false
+
+
 }
 
 

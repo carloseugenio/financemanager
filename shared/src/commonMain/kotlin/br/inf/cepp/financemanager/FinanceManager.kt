@@ -6,13 +6,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import br.inf.cepp.financemanager.di.appModule
+import br.inf.cepp.financemanager.repository.DatabaseInitializer
 import br.inf.cepp.financemanager.ui.screen.MainAppNavigation
 import br.inf.cepp.financemanager.ui.screen.PreviewAppTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.compose.KoinApplication
+import org.koin.compose.getKoin
 import org.koin.dsl.koinConfiguration
 
 class FinanceManager {
@@ -30,7 +36,13 @@ class FinanceManager {
         }
 
         KoinApplication(configuration = koinConfig) {
+            val koin = getKoin()
+            LaunchedEffect(Unit) {
+                val initializer = koin.get<DatabaseInitializer>()
+                initializer.initializeIfNeeded()
+            }
             PreviewAppTheme {
+// ...
                 Column(
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.primaryContainer)

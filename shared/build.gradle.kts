@@ -9,6 +9,9 @@ plugins {
     kotlin("plugin.serialization")
     // Koin compiler
     alias(libs.plugins.koin.compiler)
+    // Room
+    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.room)
 }
 
 koinCompiler {
@@ -16,30 +19,31 @@ koinCompiler {
     debugLogs = false
     unsafeDslChecks = true
 }
+
 kotlin {
     jvm()
-    
+
     android {
-       namespace = "br.inf.cepp.financemanager.shared"
-       compileSdk = libs.versions.android.compileSdk.get().toInt()
-       minSdk = libs.versions.android.minSdk.get().toInt()
-    
-       compilerOptions {
-           jvmTarget = JvmTarget.JVM_11
-       }
-       androidResources {
-           enable = true
-       }
-       withHostTest {
-           isIncludeAndroidResources = true
-       }
-       withDeviceTestBuilder {
-           sourceSetTreeName = "test"
-       }.configure {
-           instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-       }
+        namespace = "br.inf.cepp.financemanager.shared"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_11
+        }
+        androidResources {
+            enable = true
+        }
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -49,7 +53,7 @@ kotlin {
             // Android-specific Koin extensions (if needed)
             // They will automatically inherit the version from the commonMain BOM
             implementation(libs.koin.android)
-//            implementation(libs.koin.android.workmanager)
+            implementation("androidx.work:work-runtime-ktx:2.9.1")
         }
 
         commonMain.dependencies {
@@ -88,6 +92,13 @@ kotlin {
             implementation(libs.koin.ktor)
             ////////////////////////////////////////////////////////////////////////////////
 
+            ////////////////////////////////////////////////////////////////////////////////
+            // Room
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+//            ksp(libs.androidx.room.compiler)
+            ////////////////////////////////////////////////////////////////////////////////
+
 
             // Ktor
             // Core Ktor Client and Engine
@@ -107,12 +118,39 @@ kotlin {
             implementation(libs.koin.test.junit5)
 
             // 2. Adds the core Compose UI Multiplatform Testing API 👈
-            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-            implementation(compose.uiTest)
+            // Add Compose multiplatform test artifacts (common + JUnit4 host) so test APIs resolve
+            implementation("org.jetbrains.compose.ui:ui-test:${libs.versions.composeMultiplatform.get()}")
+            implementation("org.jetbrains.compose.ui:ui-test-junit4:${libs.versions.composeMultiplatform.get()}")
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation("org.apache.pdfbox:pdfbox:2.0.29")
+            }
         }
     }
 }
 
+// Configure the Room Gradle Plugin
+room {
+    schemaDirectory("schemas/kspJvm")
+}
+
+
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+    kspAndroid(libs.androidx.room.compiler)
+    // Ensure KSP runs for the JVM target too so Room generates AppDatabase_Impl for desktop/jvm
+    // Use add(...) because kspJvm() accessor may not be available in this Gradle/KSP setup
+    add("kspJvm", libs.androidx.room.compiler)
+//    add("kspAndroid", libs.androidx.room.compiler)
+//    add("kspIosX64", libs.androidx.room.compiler)
+//    add("kspIosArm64", libs.androidx.room.compiler)
+//    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+}
+
+tasks.register("test") {
+    group = "verification"
+    description = "Runs the JVM test suite for the shared module."
+    dependsOn("jvmTest")
 }

@@ -2,6 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.androidApplication)
+//    alias(libs.plugins.kotlin.android)      // 2. Apply Kotlin second
+    alias(libs.plugins.google.devtools.ksp)  // 3. Apply KSP last
+    alias(libs.plugins.room)
     alias(libs.plugins.composeCompiler)
 }
 
@@ -23,6 +26,15 @@ dependencies {
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
+    // Room
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+
+}
+
+// Configure the Room Gradle Plugin
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {

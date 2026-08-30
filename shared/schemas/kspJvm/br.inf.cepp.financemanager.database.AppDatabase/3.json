@@ -1,0 +1,553 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "61ce7e265dc69db7d0fbcc4dc51216e2",
+    "entities": [
+      {
+        "tableName": "person",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "expenses",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `description` TEXT NOT NULL, `date` TEXT NOT NULL, `amount` REAL NOT NULL, `status` TEXT NOT NULL, `source` TEXT NOT NULL, `category_name` TEXT NOT NULL, `category_color` TEXT NOT NULL, `category_iconKey` TEXT NOT NULL, `rec_frequency` TEXT, `rec_interval` INTEGER, `rec_count` INTEGER, `rec_until` TEXT, `rem_enabled` INTEGER, `rem_method` TEXT, `rem_leadTimeMinutes` INTEGER, `rem_destination` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.name",
+            "columnName": "category_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.color",
+            "columnName": "category_color",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.iconKey",
+            "columnName": "category_iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurrence.frequency",
+            "columnName": "rec_frequency",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recurrence.interval",
+            "columnName": "rec_interval",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recurrence.count",
+            "columnName": "rec_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recurrence.until",
+            "columnName": "rec_until",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reminder.enabled",
+            "columnName": "rem_enabled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reminder.method",
+            "columnName": "rem_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reminder.leadTimeMinutes",
+            "columnName": "rem_leadTimeMinutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reminder.destination",
+            "columnName": "rem_destination",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "accounts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `type` TEXT NOT NULL, `branch` TEXT NOT NULL, `number` TEXT NOT NULL, `network` TEXT NOT NULL, `limit` REAL NOT NULL, `monthlyDueDate` INTEGER NOT NULL, `balance` REAL NOT NULL, `color` TEXT NOT NULL, `iconKey` TEXT NOT NULL, `institution_name` TEXT NOT NULL, `institution_type` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "branch",
+            "columnName": "branch",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "number",
+            "columnName": "number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "network",
+            "columnName": "network",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "limit",
+            "columnName": "limit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "monthlyDueDate",
+            "columnName": "monthlyDueDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "balance",
+            "columnName": "balance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconKey",
+            "columnName": "iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "financeInstitution.name",
+            "columnName": "institution_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "financeInstitution.type",
+            "columnName": "institution_type",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      },
+      {
+        "tableName": "expense_categories",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `color` TEXT NOT NULL, `iconKey` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconKey",
+            "columnName": "iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      },
+      {
+        "tableName": "expense_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `date` TEXT NOT NULL, `amount` REAL NOT NULL, `iconKey` TEXT NOT NULL, `iconColor` TEXT NOT NULL, `rec_frequency` TEXT, `rec_interval` INTEGER, `rec_count` INTEGER, `rec_until` TEXT, `rem_enabled` INTEGER, `rem_method` TEXT, `rem_leadTimeMinutes` INTEGER, `rem_destination` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconKey",
+            "columnName": "iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconColor",
+            "columnName": "iconColor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recurrence.frequency",
+            "columnName": "rec_frequency",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "recurrence.interval",
+            "columnName": "rec_interval",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recurrence.count",
+            "columnName": "rec_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "recurrence.until",
+            "columnName": "rec_until",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reminder.enabled",
+            "columnName": "rem_enabled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reminder.method",
+            "columnName": "rem_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reminder.leadTimeMinutes",
+            "columnName": "rem_leadTimeMinutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reminder.destination",
+            "columnName": "rem_destination",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "project_plans",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `startDate` TEXT NOT NULL, `endDate` TEXT NOT NULL, `budget` REAL NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startDate",
+            "columnName": "startDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endDate",
+            "columnName": "endDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budget",
+            "columnName": "budget",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      },
+      {
+        "tableName": "project_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `planName` TEXT NOT NULL, `description` TEXT NOT NULL, `budget` REAL NOT NULL, `actual` REAL NOT NULL, `expectedDate` TEXT NOT NULL, `category_name` TEXT NOT NULL, `category_color` TEXT NOT NULL, `category_iconKey` TEXT NOT NULL, `related_id` INTEGER NOT NULL, `related_title` TEXT NOT NULL, `related_date` TEXT NOT NULL, `related_amount` REAL NOT NULL, `related_iconKey` TEXT NOT NULL, `related_iconColor` TEXT NOT NULL, `related_rec_frequency` TEXT, `related_rec_interval` INTEGER, `related_rec_count` INTEGER, `related_rec_until` TEXT, `related_rem_enabled` INTEGER, `related_rem_method` TEXT, `related_rem_leadTimeMinutes` INTEGER, `related_rem_destination` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planName",
+            "columnName": "planName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budget",
+            "columnName": "budget",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actual",
+            "columnName": "actual",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expectedDate",
+            "columnName": "expectedDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.name",
+            "columnName": "category_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.color",
+            "columnName": "category_color",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category.iconKey",
+            "columnName": "category_iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.id",
+            "columnName": "related_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.title",
+            "columnName": "related_title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.date",
+            "columnName": "related_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.amount",
+            "columnName": "related_amount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.iconKey",
+            "columnName": "related_iconKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.iconColor",
+            "columnName": "related_iconColor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedExpense.recurrence.frequency",
+            "columnName": "related_rec_frequency",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "relatedExpense.recurrence.interval",
+            "columnName": "related_rec_interval",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "relatedExpense.recurrence.count",
+            "columnName": "related_rec_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "relatedExpense.recurrence.until",
+            "columnName": "related_rec_until",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "relatedExpense.reminder.enabled",
+            "columnName": "related_rem_enabled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "relatedExpense.reminder.method",
+            "columnName": "related_rem_method",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "relatedExpense.reminder.leadTimeMinutes",
+            "columnName": "related_rem_leadTimeMinutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "relatedExpense.reminder.destination",
+            "columnName": "related_rem_destination",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "finance_institutions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `type` TEXT NOT NULL, PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '61ce7e265dc69db7d0fbcc4dc51216e2')"
+    ]
+  }
+}

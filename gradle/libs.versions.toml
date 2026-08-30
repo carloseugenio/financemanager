@@ -25,6 +25,9 @@ napier = "2.7.1"
 navigationCompose = "2.9.2"
 koin-bom = "4.2.2"
 koin-plugin = "1.1.0"
+room="2.8.4"
+ksp="2.3.10"
+sqlite="2.7.0"
 
 [libraries]
 # Choose core (basic icons) or extended (the full set)
@@ -86,6 +89,14 @@ koin-test = { module = "io.insert-koin:koin-test" }
 koin-test-junit5 = { module = "io.insert-koin:koin-test-junit5" }
 ###############################################################################################################
 
+###############################################################################################################
+## Room
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-runtime-android = { group = "androidx.room", name = "room-runtime-android", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+###############################################################################################################
 
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
@@ -103,3 +114,8 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 serialization = { id = "plugin.serialization", version.ref = "kotlin"}
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
+# Room
+room = { id = "androidx.room", version.ref = "room" }
+google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

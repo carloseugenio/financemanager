@@ -3,38 +3,17 @@ package br.inf.cepp.financemanager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import br.inf.cepp.financemanager.util.AndroidPlatformUtils
-import br.inf.cepp.financemanager.util.PlatformProvider
+import br.inf.cepp.financemanager.AndroidContext
+import br.inf.cepp.financemanager.FinanceManager
+import br.inf.cepp.financemanager.scheduler.AndroidRecurringExpenseScheduler
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AndroidContext.appContext = applicationContext
+        AndroidRecurringExpenseScheduler(applicationContext).start()
         setContent {
             FinanceManager().Start() // Koin boots up natively here!
         }
     }
 }
-
-//val app = FinanceManager()
-//class MainActivity : ComponentActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        enableEdgeToEdge()
-//        super.onCreate(savedInstanceState)
-//
-//        // Initialize the interface implementation for the shared code
-//        PlatformProvider.instance = AndroidPlatformUtils(applicationContext)
-//
-//        setContent {
-//            app.Start()
-//        }
-//    }
-//}
-
-//@Preview
-//@Composable
-//fun AppAndroidPreview() {
-//    app.Start()
-//}

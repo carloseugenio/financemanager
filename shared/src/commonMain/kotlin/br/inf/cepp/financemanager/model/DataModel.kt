@@ -1,5 +1,8 @@
 package br.inf.cepp.financemanager.model
 
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import br.inf.cepp.financemanager.ui.util.HexColor
@@ -21,8 +24,9 @@ data class MonthlyExpensePerCategoryViewData(
 )
 
 @Serializable
+@Entity(tableName = "finance_institutions")
 data class FinanceInstitution(
-    val name: String,
+    @PrimaryKey val name: String,
     val type: String,
 )
 
@@ -30,9 +34,11 @@ data class FinanceInstitution(
  * Accounts represents the source of money.
  */
 @Serializable
+@Entity(tableName = "accounts")
 data class Account(
-    val name: String,
+    @PrimaryKey val name: String,
     val type: AccountType,
+    @Embedded(prefix = "institution_")
     val financeInstitution: FinanceInstitution,
     val branch: String,
     val number: String,
@@ -75,19 +81,7 @@ enum class IncomeCategory {
     SALARY, RENTAL, DIVIDEND
 }
 
-/**
- * Record of an Expense in the system. Expenses can be [ExpenseStatus.CONFIRMED] or
- * [ExpenseStatus.PLANNED].
- */
-@Serializable
-data class Expense(
-    val category: ExpenseCategory,
-    @Serializable(with = SafeLocalDateSerializer::class)
-    val date: LocalDate,
-    val amount: Double,
-    val status: ExpenseStatus,
-    val source: ExpenseSource
-)
+
 
 /**
  * Where the system got the expense from. It may be user manual entry,
@@ -100,36 +94,77 @@ enum class ExpenseSource {
 
 @Serializable
 enum class ExpenseStatus {
-    CONFIRMED, PLANNED
+    DRAFT, CONFIRMED, PLANNED
+}
+
+// Recurrence rule for scheduled/recurring expenses
+@Serializable
+enum class RecurrenceFrequency {
+    DAILY, WEEKLY, MONTHLY, YEARLY
 }
 
 @Serializable
+data class RecurrenceRule(
+    val frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
+    val interval: Int = 1,               // e.g., every 1 month
+    val count: Int? = null,              // optional number of occurrences
+    @Serializable(with = SafeLocalDateSerializer::class)
+    val until: LocalDate? = null         // optional end date
+)
+
+@Serializable
+enum class ReminderMethod {
+    NOTIFICATION, ALARM, SMS, EMAIL
+}
+
+@Serializable
+data class Reminder(
+    val enabled: Boolean = false,
+    val method: ReminderMethod = ReminderMethod.NOTIFICATION,
+    // leadTime in minutes before the scheduled date/time to trigger the reminder
+    val leadTimeMinutes: Long = 60,
+    // optional destination (phone number or email) for SMS/EMAIL reminders
+    val destination: String? = null
+)
+
+@Serializable
+@Entity(tableName = "expense_categories")
 data class ExpenseCategory(
-    val name: String,
+    @PrimaryKey val name: String,
     val color: HexColor,
     val iconKey: String
 )
 
 @Serializable
+@Entity(tableName = "expense_items")
 data class ExpenseItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val title: String,
     @Serializable(with = SafeLocalDateSerializer::class)
     val date: LocalDate,
     val amount: Double,
     val iconKey: String,
-    val iconColor: HexColor
+    val iconColor: HexColor,
+    // optional recurrence and reminder information for scheduled/recurring expenses
+    @Embedded(prefix = "rec_")
+    val recurrence: RecurrenceRule? = null,
+    @Embedded(prefix = "rem_")
+    val reminder: Reminder? = null
 )
 
 /**
  * A Project plan is an intent to forecast expenses to achieve an objective.
  */
 @Serializable
+@Entity(tableName = "project_plans")
 data class ProjectPlan(
-    val name: String,
-    val period: String,
+    @PrimaryKey val name: String,
+    @Serializable(with = SafeLocalDateSerializer::class)
+    val startDate: LocalDate,
+    @Serializable(with = SafeLocalDateSerializer::class)
+    val endDate: LocalDate,
     val budget: Double,
-    val status: ProjectStatus = ProjectStatus.ACTIVE,
-    val items: List<ProjectItem>
+    val status: ProjectStatus = ProjectStatus.ACTIVE
 )
 
 @Serializable
@@ -138,13 +173,18 @@ enum class ProjectStatus {
 }
 
 @Serializable
+@Entity(tableName = "project_items")
 data class ProjectItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val planName: String,
+    @Embedded(prefix = "category_")
     val category: ExpenseCategory,
     val description: String,
     val budget: Double,
     val actual: Double,
     @Serializable(with = SafeLocalDateSerializer::class)
     val expectedDate: LocalDate,
+    @Embedded(prefix = "related_")
     val relatedExpense: ExpenseItem
 )
 

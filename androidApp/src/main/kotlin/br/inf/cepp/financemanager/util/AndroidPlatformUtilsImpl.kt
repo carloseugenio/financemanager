@@ -30,7 +30,7 @@ class AndroidPlatformUtils(private val appContext: Context) : PlatformUtils {
 
     override fun triggerHapticFeedback() {
         // 2. Explicit reference prevents the "Function invocation expected" compiler loop
-        val vibrator = this.appContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        val vibrator = this.appContext.getSystemService("vibrator") as? Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator?.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
         } else {

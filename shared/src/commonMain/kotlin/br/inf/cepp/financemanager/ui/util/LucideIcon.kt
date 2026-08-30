@@ -65,9 +65,21 @@ enum class LucideIcons(val vector: ImageVector) {
     ;
 
     companion object {
-        // Safe parsing: returns a fallback icon instead of crashing if the string is unknown
         fun fromKey(key: String): LucideIcons {
-            return entries.firstOrNull { it.name == key } ?: FileQuestionMark
+            val normalized = key.trim()
+                .replace('-', '_')
+                .replace(' ', '_')
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+            return entries.firstOrNull { it.name == normalized }
+                ?: when (key.trim()) {
+                    "shopping-cart" -> ShoppingCart
+                    "shopping-bag" -> ShoppingBag
+                    "gamepad-2" -> Gamepad
+                    "dollar-sign" -> DollarSign
+                    "file-question-mark" -> FileQuestionMark
+                    else -> FileQuestionMark
+                }
         }
 
     }

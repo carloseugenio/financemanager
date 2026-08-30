@@ -2,81 +2,118 @@
 
 ## Intent & Goal
 
-App pessoal de gestão de gastos que permite ao usuário controlar suas finanças mensais com painel visual atualizado diariamente, importação e conciliação de extratos bancários (OFX, CSV, PDF, texto), leitura de SMS bancários, escaneamento de comprovantes e planejamento de projetos com orçamento. O objetivo é dar visibilidade total sobre gastos realizados e planejados, facilitando o controle financeiro pessoal com comparativo previsto x realizado.
+A personal expense management app that allows users to track monthly finances via a daily-updated visual dashboard, featuring bank statement import and reconciliation (OFX, CSV, PDF, text), bank SMS reading, receipt scanning, and project-based budget planning. The goal is to provide full visibility into actual and planned spending, simplifying personal financial control through "budgeted vs. actual" comparisons.
+
+## Progress
+
+Phase 1 (Core navigation & scaffold): Complete — left navigation drawer, nav mapping, placeholder screens, top app bar added.
+
+Phase 2 (Dashboard wiring): Complete — month navigation added, DashboardViewModel wired to FinanceService, recent-expense mapping and currency fixes are in place.
+
+Phase 2.5 (Settings persistence): Complete — date entry mode is now persisted to the platform-backed preferences store and restored at startup, enabling free-hand or picker mode to survive app restarts.
+
+Phase 3 (Import & reconciliation UX): Complete — the app now has a real reconciliation draft list and confirm actions, with draft statuses persisted in the service layer.
+
+Phase 4 (Categories CRUD): Complete — categories can be created, edited, and deleted from the management screen, and the repository/view-model layer persists these changes.
+
+Phase 5 (Project planning): Complete — project plans can be created from the new Projects screen, seeded project data is available, and the app exposes a working project planning entry point.
+
+Phase 2.6 (Dashboard polish & smoke fixes): Complete — the loose categories button was removed, month navigation updates the chart correctly, empty months render a meaningful no-expense state, and the top bar includes a direct home/dashboard shortcut. Focused JVM tests cover month navigation and empty-state messaging.
+
+Next phase: export scaffolding and file-generation plumbing.
 
 ## Audience & Roles
 
-Usuário único (uso pessoal). Um único papel: o próprio usuário autenticado, que tem acesso completo a todas as funcionalidades do app — painel, importação, conciliação, contas, categorias, projetos e exportações.
+Single user (personal use). A single role: the authenticated user, who has full access to all app features—dashboard, import, reconciliation, accounts, categories, projects, and exports.
 
 ## Core Flows
 - These flows must work end-to-end:
 
-### Painel mensal: 
+### Monthly Dashboard:
 
-- usuário abre o app → vê painel com total gasto no mês atual, gráfico donut por categoria com percentuais e ícones coloridos, lista de despesas já realizadas agrupadas por categoria, e seção de próximas despesas planejadas (com data e valor).
+- User opens the app → views dashboard showing total spending for the current month, a donut chart by category (with percentages and colored icons), a list of incurred expenses grouped by category, and a section for upcoming planned expenses (with dates and amounts).
 
-### Importação de extrato: 
+### Statement Import:
 
-- usuário acessa tela de importação → seleciona tipo de conta (conta corrente, cartão de crédito, outra) → faz upload de arquivo do dispositivo (OFX, CSV, PDF, TXT) ou informa uma URL para o sistema baixar automaticamente → sistema processa e arquiva os dados importados no banco.
+- User accesses the import screen → selects account type (checking, credit card, other) → uploads a file from the device (OFX, CSV, PDF, TXT) or provides a URL for the system to download automatically → system processes and stores the imported data in the database.
 
-### Conciliação por SMS: 
+### SMS Reconciliation:
 
-- usuário acessa conciliação → sistema exibe SMS bancários pendentes de leitura detectados no aparelho → usuário também pode colar/digitar manualmente texto de SMS → sistema extrai valor, data e estabelecimento do SMS e cria rascunho de despesa.
+- User accesses reconciliation → system displays unread bank SMS messages detected on the device → user can also paste or manually type SMS text → system extracts amount, date, and merchant from the SMS and creates an expense draft.
 
-### Conciliação por comprovante: 
+### Receipt Reconciliation:
 
-- usuário acessa conciliação → seleciona comprovante PDF já armazenado ou escaneia um comprovante com a câmera do dispositivo → sistema extrai os dados do comprovante → gera rascunho de despesa para revisão.
+- User accesses reconciliation → selects a stored PDF receipt or scans a receipt using the device's camera → system extracts data from the receipt → generates an expense draft for review. ### Reconciliation and confirmation screen:
 
-### Tela de conciliação e confirmação: 
+- User views a list of imported/extracted expenses in draft status → can edit category, amount, date, and description for each item → confirms individually or in batches → confirmed expenses update the monthly tracker on the main dashboard.
 
-- usuário vê lista de despesas importadas/extraídas em rascunho → pode editar categoria, valor, data, descrição de cada item → confirma individualmente ou em lote → despesas confirmadas atualizam o controle mensal no painel principal.
+### Account management:
 
-### Gestão de contas: 
+- User accesses account settings → can add a bank account (bank, branch, account number), credit card (network, limit, due date), or digital/online wallet → each account becomes available for linking to expenses and for statement imports.
 
-- usuário acessa configurações de contas → pode adicionar conta bancária (banco, agência, conta), cartão de crédito (bandeira, limite, vencimento) ou carteira digital/online → cada conta fica disponível para associar às despesas e para importação de extratos.
+### Category analysis:
 
-### Análise por categoria: 
+- User accesses the categories screen → views a donut chart + detailed list of spending by category for the selected month → can navigate between periods (monthly) → each category displays a colored icon, total spent, and percentage of the total.
 
-- usuário acessa tela de categorias → vê gráfico donut + lista detalhada de gastos por categoria no mês selecionado → pode navegar por períodos (mensal) → cada categoria exibe ícone colorido, total gasto e percentual do total.
+### Project planning:
 
-### Planejamento de projeto: 
+- User creates a project → defines name, timeframe (start and end dates), and total budget → adds planned expense items by category with estimated amounts and projected dates → tracks the projected vs. actual comparison as expenses are confirmed.
 
-- usuário cria um projeto → define nome, período (data início e fim), orçamento total → adiciona itens de despesa planejada por categoria com valor estimado e data prevista → acompanha comparativo previsto x realizado conforme despesas são confirmadas.
+### Export:
 
-### Exportação: 
-
-- na tela de projeto ou no painel mensal, usuário pode exportar o planejamento ou extrato → escolhe formato PDF (formatado para impressão) ou CSV (dados brutos) → arquivo é gerado e disponibilizado para download/compartilhamento.
+- On the project screen or monthly dashboard, the user can export the plan or statement → chooses PDF format (print-ready) or CSV (raw data) → file is generated and made available for download/sharing.
 
 ## Technical Requirements
 
-- Entidades principais: 
-  - Conta (tipo, banco, nome, dados)
-  - Despesa (valor, data, categoria, conta, status: rascunho/confirmada, origem: manual/importação/SMS/comprovante), 
-  - Categoria (nome, ícone, cor)
-  - ProjetoPlanejamento (nome, período, orçamento)
-  - ItemProjeto (categoria, valor previsto, valor realizado, data prevista).
-  
-- Importação de arquivos: 
-  - upload de OFX, CSV, PDF, TXT do dispositivo ou via URL. 
+- Core entities:
+- Account (type, bank, name, details)
+- Expense (amount, date, category, account, status: draft/confirmed, source: manual/import/SMS/receipt)
+- Category (name, icon, color)
+- ProjectPlan (name, timeframe, budget)
+- ProjectItem (category, projected amount, actual amount, projected date).
 
-- Conciliação SMS: 
-  - leitura de SMS do dispositivo (Web API onde disponível) + entrada manual de texto SMS. 
+- File import:
+- Upload of OFX, CSV, PDF, or TXT files from the device or via URL.
 
-- Conciliação por comprovante: 
-  - upload de PDF ou captura via câmera (input type=file accept=image/*,capture). 
-   
-- Exportação: 
-  - geração de PDF via jsPDF (já instalado) e CSV nativo. 
-  - 
-- Armazenamento de arquivos importados no banco.
+- SMS reconciliation:
+- Reading SMS messages from the device (Web API where available) + manual SMS text input.
+
+- Reconciliation via receipt:
+- PDF upload or camera capture (input type=file accept=image/*,capture).
+
+- Export:
+- PDF generation and native CSV export.
+-
+- Storage of imported files in the database.
 
 ## Design Preferences
 
-- Visual colorido e amigável, estilo app de finanças pessoais (referência: Mobills, Organizze). 
-- Cada categoria tem ícone SVG próprio e cor distinta (alimentação: laranja, transporte: azul, saúde: verde, lazer: roxo, etc.). 
-- Fundo claro com cards brancos arredondados e sombras suaves. 
-- Gráficos donut com cores vivas. 
-- Tipografia sans-serif moderna com hierarquia clara de tamanhos. 
-- Botões com cor primária vibrante (ex: #4F46E5 índigo ou #10B981 verde). 
-- Navegação inferior com 5 ícones: Painel, Importar, Conciliar, Categorias, Projetos. 
-- Microinterações suaves nos cards. Layout responsivo mobile-first.
+- Colorful, friendly visual style typical of personal finance apps (references: Mobills, Organizze).
+- Each category features a unique SVG icon and distinct color (food: orange, transport: blue, health: green, leisure: purple, etc.).
+- Light background with rounded white cards and soft shadows.
+- Vibrant donut charts.
+- Modern sans-serif typography with a clear size hierarchy.
+- Buttons in a vibrant primary color (e.g., #4F46E5 indigo or #10B981 green).
+- Bottom navigation with 5 icons: Dashboard, Import, Reconcile, Categories, Projects.
+- Smooth micro-interactions on cards. Mobile-first responsive layout.
+
+## Schema changes
+
+- The database schema was updated during the recent project planning changes. AppDatabase.version was incremented to 2 and the JVM database builder was configured with a destructive fallback to keep local developer databases compatible with the evolving schema.
+- Consequence: existing local/mock data will be cleared automatically on JVM runs. This is intentional for the current dev phase. If preserving real user data becomes necessary, implement a proper v1→v2 migration and remove the destructive fallback.
+
+## Next phase (updated)
+
+Primary goal: Export scaffolding and file generation.
+
+Planned deliverables:
+- Implement an Export screen accessible from the Projects screen and the Monthly Dashboard.
+- Add CSV and PDF generation support for:
+  - Project plans (planned vs actual) and
+  - Monthly statements (detailed expense rows + summary).
+- Wire UI actions to trigger export generation and provide download/share UX on supported platforms (JVM, Android).
+- Add unit and shared-JVM tests to validate generated CSV/PDF contents and integration with the UI.
+- After exports are validated, remove destructive migration and add a proper migration path if schema changes remain.
+
+Timeline: next sprint — implement export UI + generation, add tests, then iterate on platform sharing behavior.
+
