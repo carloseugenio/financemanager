@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420">
+  <rect width="900" height="420" fill="#F5F7FA"/>
+  <text x="40" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#172B3A">Finance UI Palette</text>
+  <text x="40" y="72" font-family="Arial, sans-serif" font-size="14" fill="#5B6B78">Sober navy, blue and cool-gray visual system</text>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#172B3A">
+    <rect x="40" y="100" width="120" height="70" rx="8" fill="#0B1F33"/><text x="50" y="190">#0B1F33 Navy900</text>
+    <rect x="190" y="100" width="120" height="70" rx="8" fill="#123A5A"/><text x="200" y="190">#123A5A Navy800</text>
+    <rect x="340" y="100" width="120" height="70" rx="8" fill="#1F5A82"/><text x="350" y="190">#1F5A82 Navy700</text>
+    <rect x="490" y="100" width="120" height="70" rx="8" fill="#2F80C0"/><text x="500" y="190">#2F80C0 Blue600</text>
+    <rect x="640" y="100" width="120" height="70" rx="8" fill="#D7E0E7"/><text x="650" y="190">#D7E0E7 Border</text>
+    <rect x="40" y="230" width="120" height="70" rx="8" fill="#F5F7FA" stroke="#D7E0E7"/><text x="50" y="320">#F5F7FA Gray50</text>
+    <rect x="190" y="230" width="120" height="70" rx="8" fill="#EEF2F5"/><text x="200" y="320">#EEF2F5 Gray100</text>
+    <rect x="340" y="230" width="120" height="70" rx="8" fill="#172B3A"/><text x="350" y="320">#172B3A Text</text>
+    <rect x="490" y="230" width="120" height="70" rx="8" fill="#287A5A"/><text x="500" y="320">#287A5A Positive</text>
+    <rect x="640" y="230" width="120" height="70" rx="8" fill="#B54848"/><text x="650" y="320">#B54848 Negative</text>
+  </g>
+</svg>
