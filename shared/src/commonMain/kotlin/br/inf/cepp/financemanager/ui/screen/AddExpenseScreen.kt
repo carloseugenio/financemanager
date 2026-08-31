@@ -18,12 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -50,10 +48,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.inf.cepp.financemanager.model.*
+import br.inf.cepp.financemanager.ui.components.financeOutlinedTextFieldColors
 import br.inf.cepp.financemanager.util.AppSettings
 import br.inf.cepp.financemanager.util.DateEntryMode
-import br.inf.cepp.financemanager.util.DateInputUtils
 import br.inf.cepp.financemanager.util.LocalPlatformUtils
+import br.inf.cepp.financemanager.util.RecurrenceInputUtils
 import br.inf.cepp.financemanager.util.today
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
@@ -81,7 +80,7 @@ fun AddExpenseScreen(
     var status by remember { mutableStateOf(ExpenseStatus.CONFIRMED) }
     var source by remember { mutableStateOf(ExpenseSource.MANUAL) }
     var freeHandDateText by remember { mutableStateOf(date.toString()) }
-    var day by remember { mutableStateOf(date.day) }
+    var dayText by remember { mutableStateOf(date.day.toString()) }
     var month by remember { mutableStateOf(date.month) }
     var year by remember { mutableStateOf(date.year.toString()) }
     var expandedCategory by remember { mutableStateOf(false) }
@@ -95,46 +94,34 @@ fun AddExpenseScreen(
     var reminderMethod by remember { mutableStateOf(ReminderMethod.NOTIFICATION) }
     var reminderLeadTime by remember { mutableStateOf("60") }
     var reminderDestination by remember { mutableStateOf("") }
-    var expandedRecurrenceFrequency by remember { mutableStateOf(false) }
-    var expandedReminderMethod by remember { mutableStateOf(false) }
+    val recurrenceRule = RecurrenceInputUtils.buildRecurrenceRule(
+        enabled = recurrenceEnabled,
+        frequency = recurrenceFrequency,
+        intervalText = recurrenceInterval,
+        countText = recurrenceCount,
+        untilText = recurrenceUntil,
+        language = locale.language
+    )
+    val reminderRule = RecurrenceInputUtils.buildReminder(
+        enabled = reminderEnabled,
+        method = reminderMethod,
+        leadTimeText = reminderLeadTime,
+        destinationText = reminderDestination
+    )
 
     fun updateDateFromParts() {
-        val safeDay = day.coerceIn(1, 28)
+        val safeDay = dayText.toIntOrNull()?.coerceIn(1, 31) ?: date.day
         val safeYear = year.toIntOrNull() ?: date.year
-        date = LocalDate(safeYear, month, safeDay)
-        freeHandDateText = DateInputUtils.formatForLocale(date, locale.language)
-    }
-
-    fun buildRecurrence(): RecurrenceRule? {
-        if (!recurrenceEnabled) return null
-        val interval = recurrenceInterval.toIntOrNull()?.takeIf { it > 0 }
-        val count = recurrenceCount.toIntOrNull()?.takeIf { it > 0 }
-        val until = recurrenceUntil.takeIf { it.isNotBlank() }?.let { DateInputUtils.parseLenient(it, locale.language) }
-        return RecurrenceRule(
-            frequency = recurrenceFrequency,
-            interval = interval ?: 1,
-            count = count,
-            until = until
-        )
-    }
-
-    fun buildReminder(): Reminder? {
-        if (!reminderEnabled) return null
-        val leadTime = reminderLeadTime.toLongOrNull()?.takeIf { it >= 0 } ?: return null
-        return Reminder(
-            enabled = true,
-            method = reminderMethod,
-            leadTimeMinutes = leadTime,
-            destination = reminderDestination.takeIf { it.isNotBlank() }
-        )
+        date = LocalDate(safeYear, month, safeDay.coerceIn(1, 28))
+        freeHandDateText = formatDateForLocale(date, locale.language)
     }
 
     Scaffold(
-        containerColor = Color(0xFFF9FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text("Add Expense", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                title = { Text("Add Expense", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -160,7 +147,8 @@ fun AddExpenseScreen(
                     .focusRequester(descriptionFocus),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { amountFocus.requestFocus() }),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
@@ -173,7 +161,9 @@ fun AddExpenseScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { categoryFocus.requestFocus() }),
                 shape = RoundedCornerShape(12.dp),
-                prefix = { Text(utils.getCurrentCurrencySymbol() + " ") }
+                prefix = { Text(utils.getCurrentCurrencySymbol() + " ") },
+                singleLine = true,
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
@@ -193,7 +183,8 @@ fun AddExpenseScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(categoryFocus),
-                shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = financeOutlinedTextFieldColors()
             )
 
             when (dateEntryMode) {
@@ -201,10 +192,10 @@ fun AddExpenseScreen(
                     OutlinedTextField(
                         value = freeHandDateText,
                         onValueChange = { raw ->
-                            freeHandDateText = DateInputUtils.maskForLocale(raw, locale.language)
-                            DateInputUtils.parseLenient(freeHandDateText, locale.language)?.let {
+                            freeHandDateText = maskDateForLocale(raw, locale.language)
+                            parseDateForLocale(freeHandDateText, locale.language)?.let {
                                 date = it
-                                day = it.day
+                                dayText = it.day.toString()
                                 month = it.month
                                 year = it.year.toString()
                             }
@@ -216,21 +207,26 @@ fun AddExpenseScreen(
                         placeholder = { Text(if (locale.language == "pt") "dd/MM/yyyy" else "yyyy-MM-dd") },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
                 }
                 DateEntryMode.PICKER -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
-                            value = day.toString(),
+                            value = dayText,
                             onValueChange = { v ->
-                                v.toIntOrNull()?.takeIf { it in 1..31 }?.let { day = it; updateDateFromParts() }
+                                if (v.isEmpty() || v.toIntOrNull() != null) {
+                                    dayText = v
+                                    v.toIntOrNull()?.takeIf { it in 1..31 }?.let { updateDateFromParts() }
+                                }
                             },
                             label = { Text("Day") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Right) }),
                             modifier = Modifier.fillMaxWidth(0.24f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = financeOutlinedTextFieldColors()
                         )
                         OutlinedTextField(
                             value = month.name.replaceFirstChar { it.uppercase() },
@@ -246,7 +242,8 @@ fun AddExpenseScreen(
                                 }) { Text("Next") }
                             },
                             modifier = Modifier.fillMaxWidth(0.42f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = financeOutlinedTextFieldColors()
                         )
                         OutlinedTextField(
                             value = year,
@@ -260,7 +257,8 @@ fun AddExpenseScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = financeOutlinedTextFieldColors()
                         )
                     }
                 }
@@ -270,9 +268,22 @@ fun AddExpenseScreen(
                 Text("Recurrence", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Repeat this expense")
-                    Switch(checked = recurrenceEnabled, onCheckedChange = { recurrenceEnabled = it })
+                    Switch(
+                        checked = recurrenceEnabled,
+                        onCheckedChange = {
+                            recurrenceEnabled = it
+                            if (it && recurrenceInterval.isBlank()) {
+                                recurrenceInterval = "1"
+                            }
+                        }
+                    )
                 }
                 if (recurrenceEnabled) {
+                    Text(
+                        "Set how often this expense repeats. Interval is required; count and until are optional.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     OutlinedTextField(
                         value = recurrenceFrequency.name,
                         onValueChange = {},
@@ -286,16 +297,18 @@ fun AddExpenseScreen(
                             }) { Text("Next") }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
                     OutlinedTextField(
                         value = recurrenceInterval,
                         onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) recurrenceInterval = it },
-                        label = { Text("Interval (optional)") },
+                        label = { Text("Interval (required)") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
                     OutlinedTextField(
                         value = recurrenceCount,
@@ -304,18 +317,27 @@ fun AddExpenseScreen(
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
                     OutlinedTextField(
                         value = recurrenceUntil,
-                        onValueChange = { recurrenceUntil = DateInputUtils.maskForLocale(it, locale.language) },
+                        onValueChange = { recurrenceUntil = maskDateForLocale(it, locale.language) },
                         label = { Text("Until") },
                         placeholder = { Text(if (locale.language == "pt") "dd/MM/yyyy" else "yyyy-MM-dd") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
+                    recurrenceRule?.let {
+                        Text(
+                            RecurrenceInputUtils.describeRecurrence(it, locale.language),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
 
@@ -326,6 +348,11 @@ fun AddExpenseScreen(
                     Switch(checked = reminderEnabled, onCheckedChange = { reminderEnabled = it })
                 }
                 if (reminderEnabled) {
+                    Text(
+                        "Choose when and how the reminder should be sent for the recurring expense.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     OutlinedTextField(
                         value = reminderMethod.name,
                         onValueChange = {},
@@ -339,7 +366,8 @@ fun AddExpenseScreen(
                             }) { Text("Next") }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
 
                     OutlinedTextField(
@@ -349,7 +377,8 @@ fun AddExpenseScreen(
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = financeOutlinedTextFieldColors()
                     )
 
                     if (reminderMethod == ReminderMethod.SMS || reminderMethod == ReminderMethod.EMAIL) {
@@ -360,7 +389,15 @@ fun AddExpenseScreen(
                             modifier = Modifier.fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            colors = financeOutlinedTextFieldColors()
+                        )
+                    }
+                    reminderRule?.let {
+                        Text(
+                            RecurrenceInputUtils.describeReminder(it),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -373,21 +410,101 @@ fun AddExpenseScreen(
                     val amt = amount.toDoubleOrNull() ?: 0.0
                     selectedCategory?.let {
                         val safeDate = if (dateEntryMode == DateEntryMode.FREE_HAND) {
-                            DateInputUtils.parseLenient(freeHandDateText, locale.language) ?: today()
+                            parseDateForLocale(freeHandDateText, locale.language) ?: today()
                         } else {
-                            LocalDate(year.toIntOrNull() ?: today().year, month, day.coerceIn(1, 28))
+                            LocalDate(year.toIntOrNull() ?: today().year, month, dayText.toIntOrNull()?.coerceIn(1, 28) ?: today().day)
                         }
-                        onSaveExpense(description, amt, it, safeDate, status, source, buildRecurrence(), buildReminder())
+                        onSaveExpense(description, amt, it, safeDate, status, source, recurrenceRule, reminderRule)
                         onBackClick()
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2CBF)),
-                enabled = description.isNotBlank() && amount.isNotBlank() && selectedCategory != null && (!recurrenceEnabled || recurrenceCount.isBlank() || recurrenceCount.toIntOrNull()?.let { it > 0 } == true) && (!reminderEnabled || reminderLeadTime.toLongOrNull()?.let { it >= 0 } == true)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                enabled = description.isNotBlank() &&
+                    amount.isNotBlank() &&
+                    selectedCategory != null &&
+                    (!recurrenceEnabled || recurrenceRule != null) &&
+                    (!reminderEnabled || reminderRule != null)
             ) {
-                Text("Save Expense", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Save Expense", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
+    }
+}
+
+private fun maskDateForLocale(raw: String, language: String): String {
+    val digits = raw.filter { it.isDigit() }
+    return if (language == "pt") {
+        val dateParts = digits.chunked(2)
+        val day = dateParts.getOrNull(0).orEmpty()
+        val month = dateParts.getOrNull(1).orEmpty()
+        val year = dateParts.getOrNull(2).orEmpty()
+        buildString {
+            if (day.isNotEmpty()) append(day)
+            if (month.isNotEmpty()) {
+                if (day.isNotEmpty()) append('/')
+                append(month)
+            }
+            if (year.isNotEmpty()) {
+                if (day.isNotEmpty() || month.isNotEmpty()) append('/')
+                append(year)
+            }
+        }
+    } else {
+        val year = digits.take(4)
+        val month = digits.drop(4).take(2)
+        val day = digits.drop(6).take(2)
+        buildString {
+            if (year.isNotEmpty()) append(year)
+            if (month.isNotEmpty()) {
+                if (year.isNotEmpty()) append('-')
+                append(month)
+            }
+            if (day.isNotEmpty()) {
+                if (year.isNotEmpty() || month.isNotEmpty()) append('-')
+                append(day)
+            }
+        }
+    }
+}
+
+private fun parseDateForLocale(raw: String, language: String): LocalDate? {
+    val text = raw.trim()
+    if (text.isEmpty()) return null
+    return try {
+        when {
+            text.contains('/') -> {
+                val parts = text.split('/').map { it.trim() }
+                if (parts.size >= 3 && parts[0].isNotEmpty() && parts[1].isNotEmpty() && parts[2].isNotEmpty()) {
+                    LocalDate(parts[2].toInt(), parts[1].toInt(), parts[0].toInt())
+                } else null
+            }
+            text.contains('-') -> {
+                val parts = text.split('-').map { it.trim() }
+                if (parts.size >= 3 && parts[0].isNotEmpty() && parts[1].isNotEmpty() && parts[2].isNotEmpty()) {
+                    LocalDate(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
+                } else null
+            }
+            else -> {
+                val digits = text.filter { it.isDigit() }
+                if (digits.length >= 8) {
+                    val y = digits.substring(0, 4).toIntOrNull() ?: return null
+                    val m = digits.substring(4, 6).toIntOrNull() ?: return null
+                    val d = digits.substring(6, 8).toIntOrNull() ?: return null
+                    LocalDate(y, m, d)
+                } else null
+            }
+        }
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+private fun formatDateForLocale(date: LocalDate, language: String): String {
+    return if (language == "pt") {
+        "%02d/%02d/%04d".format(date.day, date.monthNumber, date.year)
+    } else {
+        "%04d-%02d-%02d".format(date.year, date.monthNumber, date.day)
     }
 }

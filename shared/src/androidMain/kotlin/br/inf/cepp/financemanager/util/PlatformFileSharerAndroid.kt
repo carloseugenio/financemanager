@@ -10,10 +10,14 @@ import java.io.File
 actual fun shareFile(path: String, mimeType: String): String {
     return try {
         val ctx = AndroidContext.appContext
-        val file = File(path)
-        if (!file.exists()) return "error: file not found"
-        val authority = ctx.packageName + ".fileprovider"
-        val uri: Uri = FileProvider.getUriForFile(ctx, authority, file)
+        val uri: Uri = if (path.startsWith("content://")) {
+            Uri.parse(path)
+        } else {
+            val file = File(path)
+            if (!file.exists()) return "error: file not found"
+            val authority = ctx.packageName + ".fileprovider"
+            FileProvider.getUriForFile(ctx, authority, file)
+        }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = mimeType
             putExtra(Intent.EXTRA_STREAM, uri)

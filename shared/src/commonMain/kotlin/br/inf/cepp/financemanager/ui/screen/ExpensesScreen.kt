@@ -20,6 +20,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ fun ExpensesScreen(onOpenExport: () -> Unit) {
     val expenses by viewModel.expenses.collectAsState()
     val selected = remember { mutableStateMapOf<Long, Boolean>() }
     var selectAll by remember { mutableStateOf(true) }
+    val hasSelection = selected.any { it.value }
 
     LaunchedEffect(expenses) {
         expenses.forEach { expense -> selected.putIfAbsent(expense.id, true) }
@@ -61,9 +63,9 @@ fun ExpensesScreen(onOpenExport: () -> Unit) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = Color(0xFFF9FAFC)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        Surface(modifier = Modifier.fillMaxSize().padding(padding), color = Color(0xFFF9FAFC)) {
+        Surface(modifier = Modifier.fillMaxSize().padding(padding), color = MaterialTheme.colorScheme.background) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
@@ -79,7 +81,7 @@ fun ExpensesScreen(onOpenExport: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (expenses.isEmpty()) {
-                    Text("No expenses recorded.")
+                    Text("No expenses recorded.", color = MaterialTheme.colorScheme.onBackground)
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f, fill = true)) {
                         items(expenses, key = { it.id }) { e ->
@@ -98,9 +100,9 @@ fun ExpensesScreen(onOpenExport: () -> Unit) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(e.description, fontWeight = FontWeight.Medium)
-                                            Text("R$ %.2f".format(e.amount), color = Color(0xFF4F46E5))
+                                            Text("R$ %.2f".format(e.amount), color = MaterialTheme.colorScheme.onSurface)
                                         }
-                                        Text(e.date.toString(), color = Color(0xFF6B7280), fontSize = 12.sp)
+                                        Text(e.date.toString(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     }
                                 }
                             }
@@ -110,11 +112,17 @@ fun ExpensesScreen(onOpenExport: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
-                    onClick = onOpenExport,
+                    onClick = { if (hasSelection) onOpenExport() },
+                    enabled = hasSelection,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 ) {
-                    Text("Open Export", color = Color.White)
+                    Text("Open Export")
                 }
             }
         }

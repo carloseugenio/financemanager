@@ -26,7 +26,7 @@ import br.inf.cepp.financemanager.util.LocalPlatformUtils
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PreviewAppTheme(content: @Composable () -> Unit) {
+fun PreviewAppTheme(darkTheme: Boolean = false, content: @Composable () -> Unit) {
     // Automatically uses the predictable Fake implementation for previews
     val fakeUtils = FakePlatformUtils(
         mockCurrencySymbol = "R$",
@@ -34,7 +34,7 @@ fun PreviewAppTheme(content: @Composable () -> Unit) {
     )
 
     CompositionLocalProvider(LocalPlatformUtils provides fakeUtils) {
-        AppTheme {
+        AppTheme(darkTheme = darkTheme) {
             content()
         }
     }

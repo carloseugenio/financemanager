@@ -48,4 +48,11 @@ class ProjectsViewModel(private val financeService: IFinanceService) : ViewModel
             refreshPlans()
         }
     }
+
+    fun deleteItem(item: ProjectItem) {
+        viewModelScope.launch {
+            financeService.deleteProjectItem(item)
+            refreshPlans()
+        }
+    }
 }

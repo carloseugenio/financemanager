@@ -15,7 +15,7 @@ This document continues `docs/plan-v2.md` after the completed navigation, dashbo
 ---
 
 ## Phase 6 — Export Foundation
-**Status:** Next
+**Status:** Completed
 
 ### Goals
 Implement reliable export generation and platform integration.
@@ -40,7 +40,7 @@ A user can export a monthly statement and project plan without corrupting or sil
 ---
 
 ## Phase 7 — Financial Data Foundation
-**Status:** Planned
+**Status:** In progress
 
 ### Goals
 Strengthen the domain model for reliable financial aggregation.
@@ -48,6 +48,7 @@ Strengthen the domain model for reliable financial aggregation.
 ### Deliverables
 - Introduce explicit money/currency value objects if not already present.
 - Centralize rounding rules.
+- Add a shared incoming-record model so cashflow is not expense-only.
 - Add transaction aggregation use cases.
 - Add monthly/category/account summaries.
 - Add budgeted-vs-actual calculation service.

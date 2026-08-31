@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -35,7 +36,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     val dateEntryMode by AppSettings.dateEntryMode.collectAsState()
 
     Scaffold(
-        containerColor = Color(0xFFF9FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },
@@ -52,7 +53,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            color = Color(0xFFF9FAFC)
+        color = MaterialTheme.colorScheme.background
         ) {
             Column(
                 modifier = Modifier
@@ -64,7 +65,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                     text = "Expense date entry",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF111827)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
                 DateEntryOption(
@@ -99,8 +100,8 @@ private fun DateEntryOption(
     ) {
         RadioButton(selected = selected, onClick = onSelect)
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, fontWeight = FontWeight.Medium)
-            Text(text = description, color = Color(0xFF6B7280), fontSize = 12.sp)
+            Text(text = label, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
     }
 }

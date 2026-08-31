@@ -2,34 +2,29 @@ package br.inf.cepp.financemanager.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Card
-import androidx.compose.material3.TextField
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.runtime.Composable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,185 +35,306 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.IconButton
-import br.inf.cepp.financemanager.ui.util.HexColor
+import br.inf.cepp.financemanager.ui.components.financeOutlinedTextFieldColors
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Month
+
+data class ExportRequest(
+    val format: ExportFormat,
+    val exportType: ExportType,
+    val filename: String,
+    val selectedProject: String?,
+    val startDate: LocalDate?,
+    val endDate: LocalDate?,
+    val monthlyStartDate: LocalDate?,
+    val monthlyEndDate: LocalDate?,
+)
+
+enum class ExportType(val label: String) {
+    Project("Project"),
+    Monthly("Monthly statement"),
+}
+
+enum class ExportFormat(val extension: String, val mimeType: String) {
+    Csv("csv", "text/csv"),
+    Pdf("pdf", "application/pdf"),
+}
 
 @Composable
-fun ExportScreen(viewModel: ExportViewModel, onBack: () -> Unit) {
+expect fun ExportScreen(viewModel: ExportViewModel, onBack: () -> Unit, initialType: String? = null)
+
+@Composable
+internal fun ExportScreenContent(
+    viewModel: ExportViewModel,
+    onBack: () -> Unit,
+    initialType: String? = null,
+    onExportRequested: (ExportRequest) -> Unit,
+) {
     val status by viewModel.lastExportStatus.collectAsState()
     val projects by viewModel.projects.collectAsState()
-    var exportType by remember { mutableStateOf("Project") }
-    var selectedProject by remember { mutableStateOf<String?>(null) }
-    var startText by remember { mutableStateOf("") }
-    var endText by remember { mutableStateOf("") }
-    var filename by remember { mutableStateOf("") }
-
-    val locale = androidx.compose.ui.platform.LocalLocale.current
     val history by viewModel.history.collectAsState()
-
-    fun defaultTimestamp(): String {
-            val d = br.inf.cepp.financemanager.util.today()
-            return "%04d%02d%02d".format(d.year, d.monthNumber, d.dayOfMonth)
+    val resolvedInitialType = initialType?.trim()?.takeIf { it.isNotEmpty() }
+    var exportType by remember(resolvedInitialType) {
+        mutableStateOf(
+            resolvedInitialType?.let { value ->
+                runCatching { ExportType.valueOf(value) }.getOrNull() ?: ExportType.Project
+            } ?: ExportType.Project
+        )
     }
+    var selectedProject by remember { mutableStateOf<String?>(null) }
+    val today = br.inf.cepp.financemanager.util.today()
+    var startText by remember { mutableStateOf(today.toString()) }
+    var endText by remember { mutableStateOf(today.toString()) }
+    var monthText by remember { mutableStateOf("%04d-%02d".format(today.year, today.month.ordinal + 1)) }
+    var filename by remember { mutableStateOf("") }
+    var typeMenuOpen by remember { mutableStateOf(false) }
+    var projectMenuOpen by remember { mutableStateOf(false) }
+    var startError by remember { mutableStateOf(false) }
+    var endError by remember { mutableStateOf(false) }
 
-    fun updateDefaultFilename() {
-        val base = when (exportType) {
-            "Project" -> selectedProject ?: "projects"
-            else -> "expenses"
+    fun defaultFilename(extension: String): String {
+        val today = br.inf.cepp.financemanager.util.today()
+        val timestamp = "%04d%02d%02d_%02d%02d".format(today.year, today.month.ordinal + 1, today.dayOfMonth, (Math.random() * 60).toInt(), (Math.random() * 60).toInt())
+        return when (exportType) {
+            ExportType.Project -> "${selectedProject ?: "projects"}_export_$timestamp.$extension"
+            ExportType.Monthly -> "monthly_statement_$timestamp.$extension"
         }
-        filename = "${base}_export_${defaultTimestamp()}.csv"
     }
+
+    val startDate = parseDate(startText)
+    val endDate = parseDate(endText)
+    val monthlyStartDate = parseMonth(monthText)
+    val monthlyEndDate = monthlyStartDate?.let { date ->
+        val monthLength = when (date.month) {
+            Month.JANUARY, Month.MARCH, Month.MAY, Month.JULY, Month.AUGUST, Month.OCTOBER, Month.DECEMBER -> 31
+            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+            Month.FEBRUARY -> if (isLeapYear(date.year)) 29 else 28
+        }
+        LocalDate(date.year, date.month, monthLength)
+    }
+    val projectRangeValid = startDate != null && endDate != null && startDate <= endDate
+    val monthlyRangeValid = monthlyStartDate != null && monthlyEndDate != null
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Export", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    TextButton(onClick = onBack) {
+                        Text("Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = Color(0xFFF9FAFC)
-    ) { paddingValues ->
-        Surface(modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues), color = Color(0xFFF9FAFC)) {
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.background
+    ) { padding ->
+        Surface(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Export data", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = androidx.compose.material3.MaterialTheme.colorScheme.onBackground)
+                Text("Generate CSV or PDF files for projects or monthly statements.", color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
 
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Export data", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("Choose what to export and the desired format. CSV generation is available for projects and date ranges.")
+                OutlinedTextField(
+                    value = exportType.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Export type") },
+                    trailingIcon = { TextButton(onClick = { typeMenuOpen = true }) { Text("Change") } },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = financeOutlinedTextFieldColors()
+                )
+                DropdownMenu(expanded = typeMenuOpen, onDismissRequest = { typeMenuOpen = false }) {
+                    ExportType.values().forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.label) },
+                            onClick = {
+                                exportType = type
+                                filename = ""
+                                typeMenuOpen = false
+                            }
+                        )
+                    }
+                }
 
-                // Export type selector
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val types = listOf("Project", "Expenses")
-                    var expandedType by remember { mutableStateOf(false) }
+                if (exportType == ExportType.Project) {
                     OutlinedTextField(
-                        value = exportType,
+                        value = selectedProject ?: "All projects",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Export item") },
-                        trailingIcon = { androidx.compose.material3.IconButton(onClick = { expandedType = true }) { androidx.compose.material3.Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null) } },
+                        label = { Text("Project") },
+                        trailingIcon = { TextButton(onClick = { projectMenuOpen = true }) { Text("Select") } },
                         modifier = Modifier.fillMaxWidth(),
+                        colors = financeOutlinedTextFieldColors()
                     )
-                    DropdownMenu(expanded = expandedType, onDismissRequest = { expandedType = false }) {
-                        types.forEach { t ->
-                            DropdownMenuItem(text = { Text(t) }, onClick = { exportType = t; expandedType = false; updateDefaultFilename() })
-                        }
-                    }
-                }
-
-                if (exportType == "Project") {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Choose project to export", fontWeight = FontWeight.SemiBold)
-                            var expanded by remember { mutableStateOf(false) }
-                            val projectNames = listOf("All Projects") + projects.map { it.name }
-                            OutlinedTextField(
-                                value = selectedProject ?: "All Projects",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Project") },
-                                trailingIcon = { IconButton(onClick = { expanded = true }) { androidx.compose.material3.Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = null) } },
-                                modifier = Modifier.fillMaxWidth()
+                    DropdownMenu(expanded = projectMenuOpen, onDismissRequest = { projectMenuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("All projects") },
+                            onClick = {
+                                selectedProject = null
+                                projectMenuOpen = false
+                            }
+                        )
+                        projects.forEach { project ->
+                            DropdownMenuItem(
+                                text = { Text(project.name) },
+                                onClick = {
+                                    selectedProject = project.name
+                                    projectMenuOpen = false
+                                }
                             )
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                projectNames.forEach { pn ->
-                                    DropdownMenuItem(text = { Text(pn) }, onClick = { selectedProject = if (pn == "All Projects") null else pn; expanded = false; updateDefaultFilename() })
-                                }
-                            }
-
-                            OutlinedTextField(value = filename, onValueChange = { filename = it }, label = { Text("File name") }, modifier = Modifier.fillMaxWidth())
-
-                            Button(onClick = { viewModel.exportProjectsCsv(if (filename.isBlank()) { updateDefaultFilename(); filename } else filename, selectedProject) }, modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))) {
-                                Text("Export to CSV", color = Color.White)
-                            }
-                            Button(onClick = { viewModel.exportProjectsPdf(if (filename.isBlank()) { updateDefaultFilename(); filename = filename.replaceAfterLast('.', "pdf"); filename } else filename.replaceAfterLast('.', "pdf"), selectedProject) }, modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))) {
-                                Text("Export to PDF", color = Color.White)
-                            }
                         }
                     }
+                    OutlinedTextField(
+                        value = startText,
+                        onValueChange = {
+                            startText = it
+                            startError = it.isNotBlank() && parseDate(it) == null
+                        },
+                        label = { Text("Start date (YYYY-MM-DD)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = startError,
+                        colors = financeOutlinedTextFieldColors()
+                    )
+                    OutlinedTextField(
+                        value = endText,
+                        onValueChange = {
+                            endText = it
+                            endError = it.isNotBlank() && parseDate(it) == null
+                        },
+                        label = { Text("End date (YYYY-MM-DD)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = endError,
+                        colors = financeOutlinedTextFieldColors()
+                    )
                 } else {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Date range exports", fontWeight = FontWeight.SemiBold)
-                            Text("Enter start and end dates as YYYY-MM-DD")
-                            TextField(value = startText, onValueChange = { startText = it }, label = { Text("Start (YYYY-MM-DD)") })
-                            TextField(value = endText, onValueChange = { endText = it }, label = { Text("End (YYYY-MM-DD)") })
-
-                            OutlinedTextField(value = filename, onValueChange = { filename = it }, label = { Text("File name") }, modifier = Modifier.fillMaxWidth())
-
-                            Button(onClick = {
-                                try {
-                                    val start = LocalDate.parse(startText)
-                                    val end = LocalDate.parse(endText)
-                                    val outName = if (filename.isBlank()) { updateDefaultFilename(); filename } else filename
-                                    viewModel.exportMonthlyCsv(outName, start, end)
-                                } catch (t: Throwable) {
-                                    viewModel.exportMonthlyCsv(if (filename.isBlank()) { updateDefaultFilename(); filename } else filename)
-                                }
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))) {
-                                Text("Export to CSV", color = Color.White)
-                            }
-
-                            Button(onClick = {
-                                try {
-                                    val start = LocalDate.parse(startText)
-                                    val end = LocalDate.parse(endText)
-                                    val outName = if (filename.isBlank()) { updateDefaultFilename(); filename = filename.replaceAfterLast('.', "pdf"); filename } else filename.replaceAfterLast('.', "pdf")
-                                    viewModel.exportMonthlyPdf(outName, start, end)
-                                } catch (t: Throwable) {
-                                    viewModel.exportMonthlyPdf(if (filename.isBlank()) { updateDefaultFilename(); filename = filename.replaceAfterLast('.', "pdf"); filename } else filename.replaceAfterLast('.', "pdf"))
-                                }
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))) {
-                                Text("Export to PDF", color = Color.White)
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    TextButton(onClick = { onBack() }) { Text("Close") }
-                                    TextButton(onClick = { onBack() }) { Text("Back") }
-                                }
-                            }
-                        }
-                    }
+                    OutlinedTextField(
+                        value = monthText,
+                        onValueChange = { monthText = it },
+                        label = { Text("Month (YYYY-MM)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = parseMonth(monthText) == null,
+                        colors = financeOutlinedTextFieldColors()
+                    )
                 }
 
-                status?.let {
-                    Text("Status: $it", color = Color(0xFF374151))
+                OutlinedTextField(
+                    value = filename,
+                    onValueChange = { filename = it },
+                    label = { Text("File name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = financeOutlinedTextFieldColors()
+                )
+
+                Button(
+                    onClick = {
+                        val outputName = if (filename.isBlank()) {
+                            defaultFilename(ExportFormat.Csv.extension)
+                        } else {
+                            br.inf.cepp.financemanager.util.sanitizeFilename(ensureExtension(filename, ExportFormat.Csv.extension))
+                        }
+                        onExportRequested(
+                            ExportRequest(
+                                format = ExportFormat.Csv,
+                                exportType = exportType,
+                                filename = outputName,
+                                selectedProject = selectedProject,
+                                startDate = startDate,
+                                endDate = endDate,
+                                monthlyStartDate = monthlyStartDate,
+                                monthlyEndDate = monthlyEndDate
+                            )
+                        )
+                    },
+                    enabled = (exportType == ExportType.Project && projectRangeValid) || (exportType == ExportType.Monthly && monthlyRangeValid),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Export CSV")
+                }
+
+                Button(
+                    onClick = {
+                        val outputName = if (filename.isBlank()) {
+                            defaultFilename(ExportFormat.Pdf.extension)
+                        } else {
+                            br.inf.cepp.financemanager.util.sanitizeFilename(ensureExtension(filename, ExportFormat.Pdf.extension))
+                        }
+                        onExportRequested(
+                            ExportRequest(
+                                format = ExportFormat.Pdf,
+                                exportType = exportType,
+                                filename = outputName,
+                                selectedProject = selectedProject,
+                                startDate = startDate,
+                                endDate = endDate,
+                                monthlyStartDate = monthlyStartDate,
+                                monthlyEndDate = monthlyEndDate
+                            )
+                        )
+                    },
+                    enabled = (exportType == ExportType.Project && projectRangeValid) || (exportType == ExportType.Monthly && monthlyRangeValid),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Export PDF")
+                }
+
+                status?.let { statusMessage ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = when {
+                                statusMessage.contains("failed", ignoreCase = true) -> androidx.compose.material3.MaterialTheme.colorScheme.errorContainer
+                                statusMessage.contains("saved", ignoreCase = true) -> androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer
+                                else -> androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+                            }
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                statusMessage,
+                                color = when {
+                                    statusMessage.contains("failed", ignoreCase = true) -> androidx.compose.material3.MaterialTheme.colorScheme.onErrorContainer
+                                    statusMessage.contains("saved", ignoreCase = true) -> androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer
+                                    else -> androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
                 }
 
                 if (history.isNotEmpty()) {
-                    Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Recent exports", fontWeight = FontWeight.SemiBold)
-                            LazyColumn(
-                                modifier = Modifier.fillMaxWidth().heightIn(max = 260.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                items(history) { path ->
-                                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text(path)
-                                        val mime = if (path.endsWith(".pdf")) "application/pdf" else "text/csv"
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                            Button(onClick = { viewModel.shareFilePath(path, mime) }) { Text("Share") }
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Recent exports", fontWeight = FontWeight.SemiBold, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                history.forEach { item ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text(
+                                                displayExportName(item.path),
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = 13.sp,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Text(
+                                                    item.mimeType,
+                                                    fontSize = 11.sp,
+                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                TextButton(onClick = { viewModel.shareFilePath(item.path, item.mimeType) }, modifier = Modifier.padding(0.dp)) {
+                                                    Text("Share")
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -229,4 +345,26 @@ fun ExportScreen(viewModel: ExportViewModel, onBack: () -> Unit) {
             }
         }
     }
+}
+
+private fun displayExportName(path: String): String {
+    return path.substringAfterLast('/').substringAfterLast('\\').ifBlank { path }
+}
+
+private fun ensureExtension(filename: String, extension: String): String {
+    return if (filename.endsWith(".$extension", ignoreCase = true)) filename else "$filename.$extension"
+}
+
+private fun parseDate(value: String): LocalDate? = runCatching { LocalDate.parse(value) }.getOrNull()
+
+private fun parseMonth(value: String): LocalDate? {
+    val match = Regex("^\\d{4}-(\\d{1,2})$").matchEntire(value.trim()) ?: return null
+    val monthNumber = match.groupValues[1].toInt()
+    val month = runCatching { Month.values()[monthNumber - 1] }.getOrNull() ?: return null
+    val year = value.trim().substringBefore('-').toIntOrNull() ?: return null
+    return LocalDate(year, month, 1)
+}
+
+private fun isLeapYear(year: Int): Boolean {
+    return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)
 }

@@ -12,7 +12,10 @@ import kotlinx.coroutines.IO
 
 import br.inf.cepp.financemanager.ui.components.FinanceManagerViewModel
 import br.inf.cepp.financemanager.ui.screen.AddExpenseViewModel
+import br.inf.cepp.financemanager.ui.screen.AddIncomeViewModel
+import br.inf.cepp.financemanager.ui.screen.AccountsViewModel
 import br.inf.cepp.financemanager.ui.screen.DashboardViewModel
+import br.inf.cepp.financemanager.ui.screen.ImportViewModel
 import br.inf.cepp.financemanager.ui.screen.ProjectsViewModel
 import br.inf.cepp.financemanager.ui.screen.ReconciliationViewModel
 import br.inf.cepp.financemanager.ui.screen.ExportViewModel
@@ -32,6 +35,9 @@ val appModule = module {
     factory { DashboardViewModel(get()) }
     factory { FinanceManagerViewModel(get()) }
     factory { AddExpenseViewModel(get()) }
+    factory { AddIncomeViewModel(get()) }
+    factory { AccountsViewModel(get()) }
+    factory { ImportViewModel(get()) }
     factory { ReconciliationViewModel(get()) }
     factory { ProjectsViewModel(get()) }
     factory { ExportViewModel(get()) }

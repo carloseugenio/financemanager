@@ -12,10 +12,11 @@ sealed interface Screen {
     @Serializable data object CategoryManager : Screen
     @Serializable data object Projects : Screen
     @Serializable data object AddExpense : Screen
+    @Serializable data object AddIncome : Screen
     @Serializable data object Expenses : Screen
     @Serializable data object Accounts : Screen
     @Serializable data object Settings : Screen
-    @Serializable data object Export : Screen
+    @Serializable data class Export(val initialType: String? = null) : Screen
 }
 
 // Maps a NavDestination (route string) to a Screen when possible.
@@ -28,11 +29,13 @@ fun NavDestination?.toScreen(): Screen? {
         route.endsWith("Reconciliation") -> Screen.Reconciliation
         route.endsWith("CategoryManager") -> Screen.CategoryManager
         route.endsWith("Projects") -> Screen.Projects
+        route.endsWith("Project") -> Screen.Projects
         route.endsWith("AddExpense") -> Screen.AddExpense
+        route.endsWith("AddIncome") -> Screen.AddIncome
         route.endsWith("Expenses") -> Screen.Expenses
         route.endsWith("Accounts") -> Screen.Accounts
         route.endsWith("Settings") -> Screen.Settings
-        route.endsWith("Export") -> Screen.Export
+        route.contains("Export") -> Screen.Export()
         else -> null
     }
 }

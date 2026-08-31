@@ -29,6 +29,7 @@ Show:
 - current month and period navigation
 - total spending
 - portfolio/financial summary where applicable
+- incoming records alongside expenses where applicable
 - category allocation donut chart
 - recent/included expenses
 - upcoming planned expenses

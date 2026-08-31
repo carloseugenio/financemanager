@@ -73,4 +73,4 @@ fun exportMonthlyToCsv(expenses: List<Expense>): String {
 }
 
 /** File saving abstraction - implemented per-platform */
-expect fun saveToFile(filename: String, content: ByteArray): String
+expect fun saveToFile(filename: String, content: ByteArray, destination: String? = null): String

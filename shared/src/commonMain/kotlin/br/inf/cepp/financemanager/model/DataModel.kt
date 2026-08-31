@@ -44,7 +44,6 @@ data class Account(
     val number: String,
     val network: String,
     val limit: Double,
-    @Serializable(with = SafeLocalDateSerializer::class)
     val monthlyDueDate: Int,
     val balance: Double,
     val color: HexColor,
@@ -57,28 +56,90 @@ enum class AccountType {
 }
 
 @Serializable
-data class Record(
-    val description: String,
-    val type: RecordType,
-    val expense: Expense,
-    val income: Income,
-)
-
-@Serializable
 enum class RecordType {
-    EXPENSE, INCOME
+    EXPENSE,
+    INCOME
 }
 
 @Serializable
+sealed interface FinancialRecord {
+    val description: String
+    val type: RecordType
+    val amount: Double
+    val date: LocalDate
+}
+
+@Serializable
+@Entity(tableName = "incomes")
 data class Income(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val description: String = "",
     val category: IncomeCategory,
     @Serializable(with = SafeLocalDateSerializer::class)
     val date: LocalDate,
+    val amount: Double,
+    val source: ExpenseSource = ExpenseSource.MANUAL,
+    val status: ExpenseStatus = ExpenseStatus.CONFIRMED,
+    @Embedded(prefix = "rec_")
+    val recurrence: RecurrenceRule? = null,
 )
 
 @Serializable
+data class OutgoingRecord(
+    val expense: Expense
+) : FinancialRecord {
+    override val description: String get() = expense.description
+    override val type: RecordType get() = RecordType.EXPENSE
+    override val amount: Double get() = expense.amount
+    override val date: LocalDate get() = expense.date
+}
+
+@Serializable
+data class IncomingRecord(
+    override val description: String,
+    val category: IncomeCategory,
+    @Serializable(with = SafeLocalDateSerializer::class)
+    override val date: LocalDate,
+    override val amount: Double,
+    val source: ExpenseSource = ExpenseSource.MANUAL,
+) : FinancialRecord {
+    override val type: RecordType get() = RecordType.INCOME
+}
+
+fun Income.toIncomingRecord(): IncomingRecord {
+    return IncomingRecord(
+        description = description,
+        category = category,
+        date = date,
+        amount = amount,
+        source = source,
+    )
+}
+
+fun IncomingRecord.toIncome(id: Long = 0): Income {
+    return Income(
+        id = id,
+        description = description,
+        category = category,
+        date = date,
+        amount = amount,
+        source = source,
+        status = ExpenseStatus.CONFIRMED,
+        recurrence = null,
+    )
+}
+
+@Serializable
 enum class IncomeCategory {
-    SALARY, RENTAL, DIVIDEND
+    AWARDS,
+    COUPONS,
+    DIVIDEND,
+    GRANTS,
+    LOTTERY,
+    REFUNDS,
+    RENTAL,
+    SALARY,
+    SALE
 }
 
 
@@ -203,4 +264,3 @@ data class ProjectItem(
     @Embedded(prefix = "related_")
     val relatedExpense: ExpenseItem
 )
-

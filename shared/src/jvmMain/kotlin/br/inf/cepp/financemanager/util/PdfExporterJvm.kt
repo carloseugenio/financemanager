@@ -6,53 +6,64 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import br.inf.cepp.financemanager.model.*
+import java.io.ByteArrayOutputStream
+
+private const val PAGE_MARGIN_LEFT = 50f
+private const val PAGE_MARGIN_TOP = 720f
+private const val LINE_HEIGHT = 14f
+private const val MAX_BODY_LINES_PER_PAGE = 42
+
+private fun String.pdfSafe(): String {
+    return replace('\u2014', '-').replace('\n', ' ').replace('\r', ' ')
+}
+
+private fun writePage(
+    doc: PDDocument,
+    heading: String,
+    bodyLines: List<String>,
+) {
+    val page = PDPage(PDRectangle.LETTER)
+    doc.addPage(page)
+    PDPageContentStream(doc, page).use { cs ->
+        cs.beginText()
+        cs.setFont(PDType1Font.HELVETICA_BOLD, 16f)
+        cs.newLineAtOffset(PAGE_MARGIN_LEFT, PAGE_MARGIN_TOP)
+        cs.showText(heading.pdfSafe())
+        cs.endText()
+
+        var y = PAGE_MARGIN_TOP - 22f
+        bodyLines.forEach { line ->
+            cs.beginText()
+            cs.setFont(PDType1Font.HELVETICA, 11f)
+            cs.newLineAtOffset(PAGE_MARGIN_LEFT, y)
+            cs.showText(line.pdfSafe())
+            cs.endText()
+            y -= LINE_HEIGHT
+        }
+    }
+}
 
 actual fun generateProjectsPdf(projects: List<ProjectPlan>, items: Map<String, List<ProjectItem>>): ByteArray {
     PDDocument().use { doc ->
         projects.forEach { p ->
-            val page = PDPage(PDRectangle.LETTER)
-            doc.addPage(page)
-            PDPageContentStream(doc, page).use { cs ->
-                cs.beginText()
-                cs.setFont(PDType1Font.HELVETICA_BOLD, 16f)
-                cs.newLineAtOffset(50f, 700f)
-                cs.showText("Project: ${p.name}")
-                cs.endText()
-
-                cs.beginText()
-                cs.setFont(PDType1Font.HELVETICA, 12f)
-                cs.newLineAtOffset(50f, 680f)
-                cs.showText("Period: ${p.startDate} — ${p.endDate}")
-                cs.endText()
-
-                cs.beginText()
-                cs.setFont(PDType1Font.HELVETICA, 12f)
-                cs.newLineAtOffset(50f, 660f)
-                cs.showText("Budget: ${p.budget}")
-                cs.endText()
-
-                val planned = items[p.name].orEmpty()
-                var y = 640f
-                planned.forEach { it ->
-                    if (y < 80f) {
-                        cs.close()
-                        val newPage = PDPage(PDRectangle.LETTER)
-                        doc.addPage(newPage)
-                        PDPageContentStream(doc, newPage).use { /* continue on new page later */ }
-                        y = 700f
+            val planned = items[p.name].orEmpty()
+            val body = buildList {
+                add("Period: ${p.startDate} - ${p.endDate}")
+                add("Budget: ${p.budget}")
+                add("")
+                if (planned.isEmpty()) {
+                    add("No planned items")
+                } else {
+                    planned.forEach { item ->
+                        add("- ${item.description}: ${item.budget} (expected ${item.expectedDate})")
                     }
-                    PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true).use { cs2 ->
-                        cs2.beginText()
-                        cs2.setFont(PDType1Font.HELVETICA, 11f)
-                        cs2.newLineAtOffset(60f, y)
-                        cs2.showText("- ${it.description}: ${it.budget} (expected ${it.expectedDate})")
-                        cs2.endText()
-                    }
-                    y -= 16f
                 }
             }
+            body.chunked(MAX_BODY_LINES_PER_PAGE).forEach { chunk ->
+                writePage(doc, "Project: ${p.name}", chunk)
+            }
         }
-        val baos = java.io.ByteArrayOutputStream()
+        val baos = ByteArrayOutputStream()
         doc.save(baos)
         return baos.toByteArray()
     }
@@ -60,35 +71,17 @@ actual fun generateProjectsPdf(projects: List<ProjectPlan>, items: Map<String, L
 
 actual fun generateMonthlyPdf(expenses: List<Expense>): ByteArray {
     PDDocument().use { doc ->
-        val page = PDPage(PDRectangle.LETTER)
-        doc.addPage(page)
-        PDPageContentStream(doc, page).use { cs ->
-            cs.beginText()
-            cs.setFont(PDType1Font.HELVETICA_BOLD, 16f)
-            cs.newLineAtOffset(50f, 700f)
-            cs.showText("Monthly Statement")
-            cs.endText()
-
-            var y = 680f
-            expenses.forEach { e ->
-                if (y < 80f) {
-                    cs.close()
-                    val newPage = PDPage(PDRectangle.LETTER)
-                    doc.addPage(newPage)
-                    PDPageContentStream(doc, newPage).use { /* continue*/ }
-                    y = 700f
-                }
-                PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true).use { cs2 ->
-                    cs2.beginText()
-                    cs2.setFont(PDType1Font.HELVETICA, 11f)
-                    cs2.newLineAtOffset(50f, y)
-                    cs2.showText("${e.date} - ${e.description} - ${e.category.name} - ${e.amount}")
-                    cs2.endText()
-                }
-                y -= 14f
+        val body = buildList {
+            add("Expenses: ${expenses.size}")
+            add("")
+            expenses.forEach { expense ->
+                add("${expense.date} - ${expense.description} - ${expense.category.name} - ${expense.amount}")
             }
         }
-        val baos = java.io.ByteArrayOutputStream()
+        body.chunked(MAX_BODY_LINES_PER_PAGE).forEach { chunk ->
+            writePage(doc, "Monthly Statement", chunk)
+        }
+        val baos = ByteArrayOutputStream()
         doc.save(baos)
         return baos.toByteArray()
     }

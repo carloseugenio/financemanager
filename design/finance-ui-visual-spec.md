@@ -90,3 +90,44 @@ Use this general order where appropriate:
 6. Primary action
 
 The first viewport should answer the screen's primary financial question quickly.
+
+## Baseline UI Hierarchy
+
+- [baseline hierarchy](finance-ui-hierarchy-baseline.png).
+
+This image is the visual baseline for screen background hierarchy.
+
+AI-generated UI implementations should preserve the hierarchy represented
+in this reference while using the semantic Compose Material 3 theme tokens
+defined by the project.
+
+Do not copy visual elements literally when they conflict with the project's
+architecture, accessibility requirements, or platform conventions.
+
+- The generated baseline establishes five visual hierarchy levels:
+- | Level | Purpose              | Light     | Dark      |
+  | ----- | -------------------- | --------- | --------- |
+  | 1     | App background       | `#F5F7FA` | `#08131F` |
+  | 2     | Surface background   | `#EEF2F5` | `#0D1D2C` |
+  | 3     | Elevated surface     | `#FFFFFF` | `#13283A` |
+  | 4     | Primary surface      | `#0B1F33` | `#4A91C5` |
+  | 5     | Accent / interactive | `#2F80C0` | `#73B1D8` |
+
+- The image also demonstrates how these levels should be applied to Dashboard, Portfolio, Transactions, Account Details, and Settings
+
+Implement the Portfolio screen following [specification](finance-ui-visual-spec.md) and use design/finance-ui-hierarchy-baseline.png as the visual reference. Use the existing Compose Material 3 theme and do not introduce hard-coded colors.
+
+## Design reference
+
+Some designs suggestions  are show in design folder for files:
+
+![ilustration1.jpg](ilustration1.jpg)
+![ilustration2.jpg](ilustration2.jpg)
+![ilustration3.jpg](ilustration3.jpg)
+![ilustration4.jpg](ilustration4.jpg)
+![ilustration5.jpg](ilustration5.jpg)
+![ilustration6.jpg](ilustration6.jpg)
+![ilustration7.jpg](ilustration7.jpg)
+![ilustration8.jpg](ilustration8.jpg)
+![ilustration9.jpg](ilustration9.jpg)
+

@@ -29,7 +29,7 @@ class FinanceManager {
 
     @Preview
     @Composable
-    fun Start() {
+    fun Start(forceDarkTheme: Boolean = false) {
         // 🚀 Load the direct module variable directly inside your configuration block
         val koinConfig = koinConfiguration {
             modules(appModule)
@@ -41,11 +41,10 @@ class FinanceManager {
                 val initializer = koin.get<DatabaseInitializer>()
                 initializer.initializeIfNeeded()
             }
-            PreviewAppTheme {
-// ...
+            PreviewAppTheme(darkTheme = forceDarkTheme) {
                 Column(
                     modifier = Modifier
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .background(MaterialTheme.colorScheme.background)
                         .safeContentPadding()
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,

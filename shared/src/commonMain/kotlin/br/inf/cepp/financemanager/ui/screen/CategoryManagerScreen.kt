@@ -83,7 +83,7 @@ fun CategoryManagerScreen(
     val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
-        containerColor = Color(0xFFF9FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -98,7 +98,7 @@ fun CategoryManagerScreen(
                         editingCategory = null
                         showBottomSheet = true
                     }) {
-                        Text("Add New", color = Color(0xFF7C3AED), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("Add New", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             )
@@ -118,8 +118,8 @@ fun CategoryManagerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White)
-                            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -144,7 +144,7 @@ fun CategoryManagerScreen(
                                 text = category.name,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp,
-                                color = Color(0xFF1E293B)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -153,10 +153,10 @@ fun CategoryManagerScreen(
                                 editingCategory = category
                                 showBottomSheet = true
                             }) {
-                                Text("Edit", color = Color(0xFF4F46E5))
+                                Text("Edit", color = MaterialTheme.colorScheme.secondary)
                             }
                             TextButton(onClick = { onDeleteCategory(category.name) }) {
-                                Text("Delete", color = Color(0xFFDC2626))
+                                Text("Delete", color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -169,11 +169,11 @@ fun CategoryManagerScreen(
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false },
             sheetState = sheetState,
-            containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
         ) {
             var categoryName by remember(editingCategory) { mutableStateOf(editingCategory?.name ?: "") }
-            val availableColors = remember { listOf("#F59E0B", "#EF4444", "#3B82F6", "#10B981", "#8B5CF6") }
+            val availableColors = remember { listOf("#0B1F33", "#123A5A", "#1F5A82", "#2F80C0", "#9AA7B2", "#287A5A", "#A87519", "#B54848") }
             var selectedColorKey by remember(editingCategory) { mutableStateOf(editingCategory?.color?.hex ?: availableColors.first()) }
             var selectedIconEnum by remember(editingCategory) { mutableStateOf(editingCategory?.iconKey?.let { iconKey -> LucideIcons.entries.firstOrNull { it.name == iconKey } } ?: LucideIcons.Utensils) }
 
@@ -183,7 +183,7 @@ fun CategoryManagerScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(if (editingCategory == null) "New Category" else "Edit Category", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                Text(if (editingCategory == null) "New Category" else "Edit Category", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
 
                 OutlinedTextField(
                     value = categoryName,
@@ -192,13 +192,19 @@ fun CategoryManagerScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF7C3AED),
-                        unfocusedBorderColor = Color(0xFFCBD5E1)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedLabelColor = MaterialTheme.colorScheme.secondary,
+                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Theme Color", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color(0xFF64748B))
+                    Text("Theme Color", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         availableColors.forEach { hex ->
                             val parsed = HexColor(hex).toComposeColor()
@@ -209,7 +215,7 @@ fun CategoryManagerScreen(
                                     .background(parsed)
                                     .border(
                                         width = if (safeSelectedColor == hex) 3.dp else 0.dp,
-                                        color = if (safeSelectedColor == hex) Color(0xFF1E293B) else Color.Transparent,
+                                    color = if (safeSelectedColor == hex) MaterialTheme.colorScheme.onSurface else Color.Transparent,
                                         shape = CircleShape
                                     )
                                     .clickable { selectedColorKey = hex }
@@ -219,7 +225,7 @@ fun CategoryManagerScreen(
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Select Icon", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = Color(0xFF64748B))
+                    Text("Select Icon", fontWeight = FontWeight.Medium, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(5),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -232,10 +238,10 @@ fun CategoryManagerScreen(
                                 modifier = Modifier
                                     .aspectRatio(1f)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) Color(0xFF7C3AED).copy(alpha = 0.1f) else Color(0xFFF1F5F9))
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
                                     .border(
                                         width = if (isSelected) 1.5.dp else 0.dp,
-                                        color = if (isSelected) Color(0xFF7C3AED) else Color.Transparent,
+                                        color = if (isSelected) MaterialTheme.colorScheme.secondary else Color.Transparent,
                                         shape = RoundedCornerShape(12.dp)
                                     )
                                     .clickable { selectedIconEnum = item },
@@ -244,7 +250,7 @@ fun CategoryManagerScreen(
                                 Icon(
                                     imageVector = item.vector,
                                     contentDescription = item.name,
-                                    tint = if (isSelected) Color(0xFF7C3AED) else Color(0xFF64748B),
+                                    tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -268,9 +274,9 @@ fun CategoryManagerScreen(
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp).padding(vertical = 2.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                 ) {
-                    Text(if (editingCategory == null) "Save Category" else "Update Category", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(if (editingCategory == null) "Save Category" else "Update Category", color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
                 }
             }
         }

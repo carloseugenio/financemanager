@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ fun ExpenseRow(
     modifier: Modifier = Modifier
 ) {
     val utils = LocalPlatformUtils.current
+    val colors = MaterialTheme.colorScheme
     val formattedDate = utils.formatMonthYear(item.date) // e.g. "09/09/2026" formats cleanly
     val currencySymbol = utils.getCurrentCurrencySymbol()
 
@@ -60,13 +62,13 @@ fun ExpenseRow(
                 text = item.title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF0F172A) // Dark Slate text color
+                color = colors.onSurface
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = item.date.toString(), // Or custom day parsing: "09/09/2026"
                 fontSize = 12.sp,
-                color = Color(0xFF94A3B8) // Muted slate gray
+                color = colors.onSurfaceVariant
             )
         }
 
@@ -75,7 +77,7 @@ fun ExpenseRow(
             text = "$currencySymbol ${String.format(LocalLocale.current.platformLocale, "%,.2f", item.amount)}",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFB45309) // Matches the warm text palette from your dashboard capture
+            color = colors.primary
         )
     }
 }
@@ -89,11 +91,12 @@ fun ExpenseSectionCard(
     items: List<ExpenseItem>,
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(Color.White)
+            .background(colors.surface)
             .padding(20.dp)
     ) {
         // Section Header Row Block
@@ -112,7 +115,7 @@ fun ExpenseSectionCard(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = colors.onSurface
             )
         }
 
@@ -120,7 +123,7 @@ fun ExpenseSectionCard(
         items.forEachIndexed { index, item ->
             ExpenseRow(item = item)
             if (index < items.lastIndex) {
-                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                HorizontalDivider(color = colors.outline.copy(alpha = 0.6f), thickness = 1.dp)
             }
         }
     }

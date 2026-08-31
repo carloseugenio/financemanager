@@ -1,17 +1,22 @@
 package br.inf.cepp.financemanager.repository
 
+import br.inf.cepp.financemanager.domain.FinancialSummaryCalculator
+import br.inf.cepp.financemanager.domain.CashflowSummary
 import br.inf.cepp.financemanager.database.AppDatabase
 import br.inf.cepp.financemanager.model.*
 import br.inf.cepp.financemanager.ui.util.lucidIconVector
 import br.inf.cepp.financemanager.ui.util.toComposeColor
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 
 class FinanceService(private val database: AppDatabase) : IFinanceService {
+    private val financialSummaryCalculator = FinancialSummaryCalculator()
     private val expenseDao = database.expenseDao()
+    private val incomeDao = database.incomeDao()
     private val accountDao = database.accountDao()
     private val categoryDao = database.expenseCategoryDao()
     private val itemDao = database.expenseItemDao()
@@ -21,20 +26,17 @@ class FinanceService(private val database: AppDatabase) : IFinanceService {
         return expenseDao.getAll().map { allExpenses ->
             val confirmedInMonth = allExpenses
                 .filter { it.status == ExpenseStatus.CONFIRMED && it.date.month == month }
-            
-            val totalAmount = confirmedInMonth.sumOf { it.amount }
-            if (totalAmount == 0.0) return@map emptyList()
 
-            val totalByCategory = confirmedInMonth.groupingBy { it.category }
-                .fold(0.0) { acc, element -> acc + element.amount }
+            val summary = financialSummaryCalculator.summarizeMonthlyExpenses(confirmedInMonth, "unknown")
+            if (summary.total.minorUnits == 0L) return@map emptyList()
 
-            totalByCategory.map { (category, sum) ->
+            summary.categorySummaries.map { categorySummary ->
                 MonthlyExpensePerCategoryViewData(
-                    name = category.name,
-                    amount = sum,
-                    percentage = (sum / totalAmount) * 100.0,
-                    color = category.color.toComposeColor(),
-                    icon = category.iconKey.lucidIconVector()
+                    name = categorySummary.category.name,
+                    amount = categorySummary.total.toMajorUnits(),
+                    percentage = categorySummary.percentage,
+                    color = categorySummary.category.color.toComposeColor(),
+                    icon = categorySummary.category.iconKey.lucidIconVector()
                 )
             }
         }
@@ -42,18 +44,42 @@ class FinanceService(private val database: AppDatabase) : IFinanceService {
 
     override fun getTotalExpensesWithCurrencySymbol(symbol: String, month: Month): Flow<String> {
         return expenseDao.getAll().map { allExpenses ->
-            val total = allExpenses
+            val confirmedInMonth = allExpenses
                 .filter { it.status == ExpenseStatus.CONFIRMED && it.date.month == month }
-                .sumOf { it.amount }
-            "$symbol $total"
+            val total = financialSummaryCalculator.summarizeMonthlyExpenses(confirmedInMonth, symbol).total
+            "$symbol ${"%.2f".format(total.toMajorUnits())}"
         }
     }
 
     override fun getTotalExpenses(month: Month): Flow<Double> {
         return expenseDao.getAll().map { allExpenses ->
-            allExpenses
-                .filter { it.status == ExpenseStatus.CONFIRMED && it.date.month == month }
-                .sumOf { it.amount }
+            val summary = financialSummaryCalculator.summarizeMonthlyExpenses(
+                allExpenses.filter { it.status == ExpenseStatus.CONFIRMED && it.date.month == month },
+                "unknown"
+            )
+            summary.total.toMajorUnits()
+        }
+    }
+
+    override fun getAllIncomes(): Flow<List<Income>> = incomeDao.getAll()
+
+    override fun getPlannedIncomes(): Flow<List<Income>> = incomeDao.getByStatus(ExpenseStatus.PLANNED)
+
+    override fun getAllFinancialRecords(): Flow<List<FinancialRecord>> {
+        return combine(expenseDao.getAll(), incomeDao.getAll()) { expenses, incomes ->
+            val expenseRecords = expenses.map { OutgoingRecord(it) }
+            val incomeRecords = incomes.map { it.toIncomingRecord() }
+            (expenseRecords + incomeRecords).sortedWith(
+                compareByDescending<FinancialRecord> { it.date }
+                    .thenBy { it.type }
+                    .thenBy { it.description }
+            )
+        }
+    }
+
+    override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> {
+        return getAllFinancialRecords().map { records ->
+            financialSummaryCalculator.summarizeMonthlyCashflow(records, month, "unknown")
         }
     }
 
@@ -73,6 +99,10 @@ class FinanceService(private val database: AppDatabase) : IFinanceService {
     
     override suspend fun saveExpense(expense: Expense): Long {
         return expenseDao.insert(expense)
+    }
+
+    override suspend fun saveIncome(income: Income): Long {
+        return incomeDao.insert(income)
     }
 
     override suspend fun saveAccount(account: Account) {
@@ -97,6 +127,10 @@ class FinanceService(private val database: AppDatabase) : IFinanceService {
 
     override suspend fun saveProjectItem(item: ProjectItem) {
         projectDao.insertItem(item)
+    }
+
+    override suspend fun deleteProjectItem(item: ProjectItem) {
+        projectDao.deleteItem(item)
     }
 
     override suspend fun confirmExpense(expenseId: Long) {

@@ -2,6 +2,7 @@ package br.inf.cepp.financemanager
 
 import br.inf.cepp.financemanager.model.*
 import br.inf.cepp.financemanager.ui.util.HexColor
+import br.inf.cepp.financemanager.scheduler.RecurringExpenseScheduleUtils
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlin.test.Test
@@ -128,6 +129,42 @@ class RecurringExpenseLogicTest {
         assertTrue(isDueOnDate(startDate, LocalDate(2026, Month.JANUARY, 5), rule), "Jan 5 should be due (before until)")
         assertTrue(isDueOnDate(startDate, LocalDate(2026, Month.JANUARY, 10), rule), "Jan 10 should be due (at until)")
         assertFalse(isDueOnDate(startDate, LocalDate(2026, Month.JANUARY, 11), rule), "Jan 11 should not be due (after until)")
+    }
+
+    @Test
+    fun nextRunDateOnOrAfterUsesStartDateWhenFuture() {
+        val startDate = LocalDate(2026, Month.JANUARY, 20)
+        val rule = RecurrenceRule(
+            frequency = RecurrenceFrequency.WEEKLY,
+            interval = 1
+        )
+
+        assertEquals(
+            startDate,
+            RecurringExpenseScheduleUtils.nextRunDateOnOrAfter(
+                startDate = startDate,
+                currentDate = LocalDate(2026, Month.JANUARY, 10),
+                rule = rule
+            )
+        )
+    }
+
+    @Test
+    fun nextRunDateOnOrAfterAdvancesToNextOccurrence() {
+        val startDate = LocalDate(2026, Month.JANUARY, 1)
+        val rule = RecurrenceRule(
+            frequency = RecurrenceFrequency.MONTHLY,
+            interval = 1
+        )
+
+        assertEquals(
+            LocalDate(2026, Month.FEBRUARY, 1),
+            RecurringExpenseScheduleUtils.nextRunDateOnOrAfter(
+                startDate = startDate,
+                currentDate = LocalDate(2026, Month.JANUARY, 20),
+                rule = rule
+            )
+        )
     }
 
     // ========== Duplicate Prevention Tests ==========

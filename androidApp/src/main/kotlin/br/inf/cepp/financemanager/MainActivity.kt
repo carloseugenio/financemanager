@@ -10,6 +10,9 @@ import br.inf.cepp.financemanager.scheduler.AndroidRecurringExpenseScheduler
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            throwable.printStackTrace()
+        }
         AndroidContext.appContext = applicationContext
         AndroidRecurringExpenseScheduler(applicationContext).start()
         setContent {

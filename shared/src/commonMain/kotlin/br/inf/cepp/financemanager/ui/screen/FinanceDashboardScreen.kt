@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -46,9 +48,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.toRoute
 import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
 import br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState
 import br.inf.cepp.financemanager.ui.components.ExpenseSectionCard
+import br.inf.cepp.financemanager.ui.components.IncomeSectionCard
 import br.inf.cepp.financemanager.ui.screen.DashboardViewModel
 import br.inf.cepp.financemanager.util.today
 import com.composables.icons.lucide.*
@@ -62,6 +66,7 @@ fun MainAppNavigation() {
     val viewModel: CategoriesViewModel = koinViewModel<CategoriesViewModel>()
     val dashboardViewModel: DashboardViewModel = koinViewModel<DashboardViewModel>()
     val addExpenseViewModel: AddExpenseViewModel = koinViewModel<AddExpenseViewModel>()
+    val addIncomeViewModel: AddIncomeViewModel = koinViewModel<AddIncomeViewModel>()
     val reconciliationViewModel: ReconciliationViewModel = koinViewModel<ReconciliationViewModel>()
     val projectsViewModel: ProjectsViewModel = koinViewModel<ProjectsViewModel>()
     val exportViewModel: ExportViewModel = koinViewModel<ExportViewModel>()
@@ -178,6 +183,17 @@ fun MainAppNavigation() {
 
                 NavigationDrawerItem(
                     modifier = itemModifier,
+                    label = { Text("Add Income", color = if (currentScreen == Screen.AddIncome) MaterialTheme.colorScheme.primary else LocalContentColor.current) },
+                    selected = (currentScreen == Screen.AddIncome),
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate(Screen.AddIncome)
+                    },
+                    icon = { Icon(Lucide.TrendingUp, contentDescription = "Add Income", tint = if (currentScreen == Screen.AddIncome) MaterialTheme.colorScheme.primary else LocalContentColor.current) }
+                )
+
+                NavigationDrawerItem(
+                    modifier = itemModifier,
                     label = { Text("Accounts", color = if (currentScreen == Screen.Accounts) MaterialTheme.colorScheme.primary else LocalContentColor.current) },
                     selected = (currentScreen == Screen.Accounts),
                     onClick = {
@@ -193,7 +209,7 @@ fun MainAppNavigation() {
                     selected = (currentScreen == Screen.Export),
                     onClick = {
                         scope.launch { drawerState.close() }
-                        navController.navigate(Screen.Export)
+                        navController.navigate(Screen.Export())
                     },
                     icon = { Icon(Lucide.Archive, contentDescription = "Export", tint = if (currentScreen == Screen.Export) MaterialTheme.colorScheme.primary else LocalContentColor.current) }
                 )
@@ -260,6 +276,12 @@ fun MainAppNavigation() {
                             },
                             onAddExpenseClick = {
                                 navController.navigate(Screen.AddExpense)
+                            },
+                            onAddIncomeClick = {
+                                navController.navigate(Screen.AddIncome)
+                            },
+                            onExportClick = {
+                                navController.navigate(Screen.Export())
                             }
                         )
                     }
@@ -267,8 +289,7 @@ fun MainAppNavigation() {
                     composable<Screen.Import> {
                         ImportScreen(
                             onBack = { navController.popBackStack() },
-                            onReviewDrafts = { navController.navigate(Screen.Reconciliation) },
-                            onSelectFile = { navController.navigate(Screen.Import) }
+                            onReviewDrafts = { navController.navigate(Screen.Reconciliation) }
                         )
                     }
 
@@ -280,7 +301,7 @@ fun MainAppNavigation() {
                     }
 
                     composable<Screen.Expenses> {
-                        ExpensesScreen(onOpenExport = { navController.navigate(Screen.Export) })
+                        ExpensesScreen(onOpenExport = { navController.navigate(Screen.Export(initialType = "Monthly")) })
                     }
 
                     composable<Screen.Accounts> {
@@ -315,14 +336,17 @@ fun MainAppNavigation() {
                     composable<Screen.Projects> {
                         ProjectsScreen(
                             viewModel = projectsViewModel,
-                            onBack = { navController.popBackStack() }
+                            onBack = { navController.popBackStack() },
+                            onExportClick = { navController.navigate(Screen.Export(initialType = "Project")) }
                         )
                     }
 
-                    composable<Screen.Export> {
+                    composable<Screen.Export> { backStackEntry ->
+                        val exportRoute = backStackEntry.toRoute<Screen.Export>()
                         ExportScreen(
                             viewModel = exportViewModel,
-                            onBack = { navController.popBackStack() }
+                            onBack = { navController.popBackStack() },
+                            initialType = exportRoute.initialType
                         )
                     }
 
@@ -332,6 +356,15 @@ fun MainAppNavigation() {
                             onBackClick = { navController.popBackStack() },
                             onSaveExpense = { desc, amt, cat, date, status, src, recurrence, reminder ->
                                 addExpenseViewModel.saveExpense(desc, amt, cat, date, status, src, recurrence, reminder)
+                            }
+                        )
+                    }
+
+                    composable<Screen.AddIncome> {
+                        AddIncomeScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onSaveIncome = { desc, amt, category, date, source, status, recurrence, existingIncome ->
+                                addIncomeViewModel.saveIncome(desc, amt, category, date, source, status, recurrence, existingIncome)
                             }
                         )
                     }
@@ -351,23 +384,40 @@ fun FinanceDashboardScreen(
     viewModel: DashboardViewModel,
     selectedMonth: Month = today().month,
     onMonthChange: (Month) -> Unit = {},
-    onManageCategoriesClick: () -> Unit, // 👈 1. Add this function callback parameter
-    onAddExpenseClick: () -> Unit
+    onManageCategoriesClick: () -> Unit,
+    onAddExpenseClick: () -> Unit,
+    onAddIncomeClick: () -> Unit,
+    onExportClick: () -> Unit
 ) {
     val viewData by viewModel.viewData.collectAsState()
     val plannedExpenses by viewModel.plannedExpenses.collectAsState()
+    val plannedIncomes by viewModel.plannedIncomes.collectAsState()
     val recentExpenses by viewModel.recentExpenses.collectAsState()
     
     val totalSpentAmount by viewModel.totalSpentAmount.collectAsState()
     val transactionCount by viewModel.transactionCount.collectAsState()
     val accountCount by viewModel.accountCount.collectAsState()
+    val previousMonthSpentAmount by viewModel.previousMonthSpentAmount.collectAsState()
+    val plannedBudgetAmount by viewModel.plannedBudgetAmount.collectAsState()
+    val budgetVsActual by viewModel.budgetVsActual.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     val utils = br.inf.cepp.financemanager.util.LocalPlatformUtils.current
     val totalSpent = "${utils.getCurrentCurrencySymbol()} ${"%.2f".format(totalSpentAmount)}"
+    val plannedBudget = "${utils.getCurrentCurrencySymbol()} ${"%.2f".format(plannedBudgetAmount)}"
+    val budgetUtilizationPercent = budgetVsActual?.utilizationPercent ?: if (plannedBudgetAmount > 0.0) (totalSpentAmount / plannedBudgetAmount) * 100.0 else 0.0
+    val monthLabel = selectedMonth.name.lowercase().replaceFirstChar { it.uppercase() }
+    val previousMonthDisplay = "${utils.getCurrentCurrencySymbol()} ${"%.2f".format(previousMonthSpentAmount)}"
+    val previousDeltaPercent = if (previousMonthSpentAmount > 0.0) {
+        ((totalSpentAmount - previousMonthSpentAmount) / previousMonthSpentAmount) * 100.0
+    } else {
+        0.0
+    }
     
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFF7F9FC) // Soft gray background
+        color = MaterialTheme.colorScheme.background
     ) {
         Box {
             LazyColumn(
@@ -386,7 +436,11 @@ fun FinanceDashboardScreen(
                             Icon(Lucide.ChevronLeft, contentDescription = "Previous month")
                         }
 
-                        Text(text = selectedMonth.name.lowercase().replaceFirstChar { it.uppercase() })
+                        Text(
+                            text = monthLabel,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.SemiBold
+                        )
 
                         IconButton(onClick = { onMonthChange(nextMonth(selectedMonth)) }) {
                             Icon(Lucide.ChevronRight, contentDescription = "Next month")
@@ -394,79 +448,167 @@ fun FinanceDashboardScreen(
                     }
                 }
 
-                // Top Purple Summary Card
                 item {
-                    TopSummaryCard(
-                        totalSpent = totalSpent,
-                        transactionCount = transactionCount,
-                        categoryCount = viewData.size,
-                        accountCount = accountCount
-                    )
+                    when {
+                        isLoading -> LoadingOverviewCard()
+                        errorMessage != null -> ErrorOverviewCard(errorMessage!!)
+                        else -> TopSummaryCard(
+                            totalSpent = totalSpent,
+                            transactionCount = transactionCount,
+                            categoryCount = viewData.size,
+                            accountCount = accountCount,
+                            monthLabel = monthLabel,
+                            plannedBudget = plannedBudget,
+                            budgetUtilizationPercent = budgetUtilizationPercent
+                        )
+                    }
                 }
 
-                // Main Breakdown Container Card
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(24.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "Expenses by Category",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF222222),
-                                modifier = Modifier.align(Alignment.Start)
-                            )
-
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            if (viewData.isEmpty()) {
-                                Text(
-                                    text = emptyExpensesMessage(selectedMonth),
-                                    color = Color(0xFF6B7280),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
+                if (!isLoading && errorMessage == null) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = onExportClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            ) {
+                                Text("Export data")
+                            }
+                            Button(
+                                onClick = onAddIncomeClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
                                 )
-                            } else {
-                                DonutChart(categories = viewData, selectedMonth = selectedMonth)
+                            ) {
+                                Text("Add income")
+                            }
+                            Button(
+                                onClick = onManageCategoriesClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                Text("Manage categories")
+                            }
+                        }
+                    }
 
-                                Spacer(modifier = Modifier.height(32.dp))
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Budgeted vs actual",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.align(Alignment.Start)
+                                )
 
-                                viewData.forEach { category ->
-                                    CategoryProgressRow(category = category)
+                                if (viewData.isEmpty()) {
                                     Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = emptyExpensesMessage(selectedMonth),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                } else {
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    DonutChart(categories = viewData, selectedMonth = selectedMonth, totalAmountLabel = totalSpent)
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    BudgetVsActualCard(
+                                        actualAmount = totalSpent,
+                                        budgetAmount = plannedBudget,
+                                        utilizationPercent = budgetUtilizationPercent
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    viewData.forEach { category ->
+                                        CategoryProgressRow(category = category)
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Screen Section Card Block A: Planned Expenses
-                item {
-                    ExpenseSectionCard(
-                        title = "Upcoming planned expenses",
-                        sectionIcon = Lucide.Calendar,
-                        iconTint = Color(0xFF6366F1), // Purple Indigo tone
-                        items = plannedExpenses
-                    )
-                }
+                    item {
+                        MonthlyPerformanceCard(
+                            currentAmount = totalSpent,
+                            previousAmount = previousMonthDisplay,
+                            deltaPercent = previousDeltaPercent
+                        )
+                    }
 
-                // Screen Section Card Block B: Recent Expenses
-                item {
-                    ExpenseSectionCard(
-                        title = "Recent expenses",
-                        sectionIcon = Lucide.TrendingDown,
-                        iconTint = Color(0xFFEF4444), // Expense warning red tone
-                        items = recentExpenses
-                    )
+                    item {
+                        ExpenseSectionCard(
+                            title = "Upcoming planned expenses",
+                            sectionIcon = Lucide.Calendar,
+                            iconTint = MaterialTheme.colorScheme.secondary,
+                            items = plannedExpenses
+                        )
+                    }
+
+                    item {
+                        IncomeSectionCard(
+                            title = "Upcoming planned incomes",
+                            sectionIcon = Lucide.TrendingUp,
+                            iconTint = Color(0xFF287A5A),
+                            items = plannedIncomes
+                        )
+                    }
+
+                    item {
+                        ExpenseSectionCard(
+                            title = "Recent expenses",
+                            sectionIcon = Lucide.TrendingDown,
+                            iconTint = MaterialTheme.colorScheme.error,
+                            items = recentExpenses
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LoadingOverviewCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Loading dashboard", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Text("Fetching balances, expenses, and planned items.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ErrorOverviewCard(message: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Dashboard unavailable", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onErrorContainer)
+            Text(message, color = MaterialTheme.colorScheme.onErrorContainer)
         }
     }
 }

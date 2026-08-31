@@ -25,6 +25,12 @@ class DatabaseConverters {
     fun toExpenseSource(value: String?): ExpenseSource? = value?.let { ExpenseSource.valueOf(it) }
 
     @TypeConverter
+    fun fromIncomeCategory(value: IncomeCategory?): String? = value?.name
+
+    @TypeConverter
+    fun toIncomeCategory(value: String?): IncomeCategory? = value?.let { IncomeCategory.valueOf(it) }
+
+    @TypeConverter
     fun fromHexColor(value: HexColor?): String? = value?.hex
 
     @TypeConverter

@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,8 +54,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import br.inf.cepp.financemanager.model.ProjectItem
 import br.inf.cepp.financemanager.model.ProjectPlan
 import br.inf.cepp.financemanager.model.ProjectStatus
 import kotlinx.datetime.LocalDate
@@ -66,17 +70,20 @@ import br.inf.cepp.financemanager.ui.util.HexColor
 import com.composables.icons.lucide.FolderKanban
 import com.composables.icons.lucide.Lucide
 import br.inf.cepp.financemanager.ui.components.CategoriesViewModel
+import br.inf.cepp.financemanager.ui.components.financeOutlinedTextFieldColors
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
+fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit, onExportClick: () -> Unit) {
     val categoriesViewModel: CategoriesViewModel = koinViewModel()
     val plans by viewModel.plans.collectAsState()
     val projectItems by viewModel.projectItems.collectAsState()
     val categoriesState by categoriesViewModel.uiState.collectAsState()
     var showCreateSheet by remember { mutableStateOf(false) }
     var showItemSheetFor by remember { mutableStateOf<String?>(null) }
+    var editingPlan by remember { mutableStateOf<ProjectPlan?>(null) }
+    var editingItem by remember { mutableStateOf<ProjectItem?>(null) }
     val sheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(Unit) {
@@ -84,7 +91,7 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
     }
 
     Scaffold(
-        containerColor = Color(0xFFF9FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Projects", fontWeight = FontWeight.Bold) },
@@ -95,8 +102,11 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
                     }
                 },
                 actions = {
+                    TextButton(onClick = onExportClick) {
+                        Text("Export", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                    }
                     TextButton(onClick = { showCreateSheet = true }) {
-                        Text("New", color = Color(0xFF4F46E5), fontWeight = FontWeight.Bold)
+                        Text("New", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -106,7 +116,7 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            color = Color(0xFFF9FAFC)
+        color = MaterialTheme.colorScheme.background
         ) {
             if (plans.isEmpty()) {
                 Column(
@@ -125,16 +135,10 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
                     ) {
                         Icon(imageVector = Lucide.FolderKanban, contentDescription = "Projects", tint = Color(0xFF4F46E5), modifier = Modifier.size(32.dp))
                     }
-                    Text(
-                        text = "No projects yet",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color(0xFF111827),
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                    Text("No projects yet", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(top = 16.dp))
                     Text(
                         text = "Create a project plan to track budgeted vs actual spending.",
-                        color = Color(0xFF6B7280),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -146,7 +150,14 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(plans) { plan ->
-                        ProjectCard(plan = plan, plannedItems = projectItems[plan.name].orEmpty(), onAddItem = { showItemSheetFor = plan.name })
+                        ProjectCard(
+                            plan = plan,
+                            plannedItems = projectItems[plan.name].orEmpty(),
+                            onAddItem = { showItemSheetFor = plan.name; editingItem = null },
+                            onEditPlan = { editingPlan = plan },
+                            onEditItem = { editingItem = it },
+                            onDeleteItem = { viewModel.deleteItem(it) }
+                        )
                     }
                 }
             }
@@ -157,9 +168,21 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
         PlanCreationSheet(
             sheetState = sheetState,
             onDismiss = { showCreateSheet = false },
-            onSave = { name, startDate, endDate, budget ->
-                viewModel.savePlan(ProjectPlan(name = name, startDate = startDate, endDate = endDate, budget = budget, status = ProjectStatus.ACTIVE))
+            onSave = { plan ->
+                viewModel.savePlan(plan)
                 showCreateSheet = false
+            }
+        )
+    }
+
+    if (editingPlan != null) {
+        PlanCreationSheet(
+            sheetState = sheetState,
+            existingPlan = editingPlan,
+            onDismiss = { editingPlan = null },
+            onSave = { plan ->
+                viewModel.savePlan(plan)
+                editingPlan = null
             }
         )
     }
@@ -187,6 +210,29 @@ fun ProjectsScreen(viewModel: ProjectsViewModel, onBack: () -> Unit) {
             }
         )
     }
+
+    if (editingItem != null) {
+        val categories = (categoriesState as? br.inf.cepp.financemanager.ui.components.ExpenseCategoriesUiState.Success)?.data.orEmpty()
+        PlanItemCreationSheet(
+            sheetState = sheetState,
+            planName = editingItem!!.planName,
+            categories = categories,
+            existingItem = editingItem,
+            onDismiss = { editingItem = null },
+            onSave = { planName, description, amount, expectedDate, category ->
+                val updated = editingItem!!.copy(
+                    planName = planName,
+                    category = category,
+                    description = description,
+                    budget = amount,
+                    expectedDate = expectedDate,
+                    relatedExpense = editingItem!!.relatedExpense.copy(title = "", date = expectedDate, amount = 0.0)
+                )
+                viewModel.saveItem(updated)
+                editingItem = null
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -195,23 +241,31 @@ private fun PlanItemCreationSheet(
     sheetState: androidx.compose.material3.SheetState,
     planName: String,
     categories: List<ExpenseCategory>,
+    existingItem: ProjectItem? = null,
     onDismiss: () -> Unit,
     onSave: (String, String, Double, LocalDate, ExpenseCategory) -> Unit
 ) {
-    var description by remember { mutableStateOf("") }
-    var amountText by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
-    var expectedDate by remember { mutableStateOf(today()) }
-    var day by remember { mutableStateOf(expectedDate.day) }
-    var month by remember { mutableStateOf(expectedDate.month) }
-    var year by remember { mutableStateOf(expectedDate.year.toString()) }
+    val initialDate = existingItem?.expectedDate ?: today()
+    var description by remember(existingItem?.id) { mutableStateOf(existingItem?.description ?: "") }
+    var amountText by remember(existingItem?.id) { mutableStateOf(existingItem?.budget?.toString() ?: "") }
+    var selectedCategory by remember(existingItem?.id) { mutableStateOf(existingItem?.category ?: categories.firstOrNull()) }
+    var expectedDate by remember(existingItem?.id) { mutableStateOf(initialDate) }
+    var dayText by remember(existingItem?.id) { mutableStateOf(initialDate.day.toString()) }
+    var month by remember(existingItem?.id) { mutableStateOf(initialDate.month) }
+    var yearText by remember(existingItem?.id) { mutableStateOf(initialDate.year.toString()) }
     val dayFocus = remember { FocusRequester() }
     val yearFocus = remember { FocusRequester() }
+
+    fun updateExpectedDateFromParts() {
+        val parsedYear = yearText.toIntOrNull() ?: initialDate.year
+        val parsedDay = dayText.toIntOrNull()?.coerceIn(1, 31) ?: 1
+        expectedDate = LocalDate(parsedYear, month, parsedDay.coerceIn(1, 28))
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         val focusManager = LocalFocusManager.current
@@ -222,13 +276,19 @@ private fun PlanItemCreationSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Add planned item to $planName", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF111827))
+            Text(
+                text = if (existingItem == null) "Add planned item to $planName" else "Edit planned item",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
@@ -247,23 +307,30 @@ private fun PlanItemCreationSheet(
                         }) { Text("Next") }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = financeOutlinedTextFieldColors()
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value = day.toString(),
+                    value = dayText,
                     onValueChange = { v ->
-                        v.toIntOrNull()?.takeIf { it in 1..31 }?.let {
-                            day = it
-                            expectedDate = LocalDate(year.toIntOrNull() ?: today().year, month, day.coerceIn(1, 28))
+                        if (v.isEmpty() || v.toIntOrNull() != null) {
+                            dayText = v
+                            if (v.isNotEmpty()) {
+                                val parsed = v.toIntOrNull() ?: return@OutlinedTextField
+                                if (parsed in 1..31) {
+                                    expectedDate = LocalDate(yearText.toIntOrNull() ?: initialDate.year, month, parsed.coerceIn(1, 28))
+                                }
+                            }
                         }
                     },
                     label = { Text("Day") },
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Next),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Right) }),
                     modifier = Modifier.fillMaxWidth(0.24f).focusRequester(dayFocus),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = financeOutlinedTextFieldColors()
                 )
                 OutlinedTextField(
                     value = month.name.replaceFirstChar { it.uppercase() },
@@ -275,27 +342,30 @@ private fun PlanItemCreationSheet(
                             val values = Month.entries.toTypedArray()
                             val idx = values.indexOf(month)
                             month = values[(idx + 1) % values.size]
-                            expectedDate = LocalDate(year.toIntOrNull() ?: today().year, month, day.coerceIn(1, 28))
+                            updateExpectedDateFromParts()
                         }) { Text("Next") }
                     },
                     modifier = Modifier.fillMaxWidth(0.42f),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = financeOutlinedTextFieldColors()
                 )
                 OutlinedTextField(
-                    value = year,
+                    value = yearText,
                     onValueChange = { v ->
                         if (v.isEmpty() || v.toIntOrNull() != null) {
-                            year = v
-                            if (v.toIntOrNull() != null && v.length == 4) {
-                                expectedDate = LocalDate(v.toInt(), month, day.coerceIn(1, 28))
+                            yearText = v
+                            if (v.isNotEmpty()) {
+                                val parsedYear = v.toIntOrNull() ?: return@OutlinedTextField
+                                expectedDate = LocalDate(parsedYear, month, dayText.toIntOrNull()?.coerceIn(1, 28) ?: 1)
                             }
                         }
                     },
                     label = { Text("Year") },
-                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number, imeAction = androidx.compose.ui.text.input.ImeAction.Done),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                     modifier = Modifier.fillMaxWidth().focusRequester(yearFocus),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = financeOutlinedTextFieldColors()
                 )
             }
 
@@ -305,7 +375,11 @@ private fun PlanItemCreationSheet(
                 onValueChange = { if (it.isEmpty() || it.toDoubleOrNull() != null) amountText = it },
                 label = { Text("Amount") },
                 modifier = Modifier.fillMaxWidth(),
-                prefix = { Text(utils.getCurrentCurrencySymbol() + " ") }
+                prefix = { Text(utils.getCurrentCurrencySymbol() + " ") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                singleLine = true,
+                colors = financeOutlinedTextFieldColors()
             )
 
             Button(
@@ -319,21 +393,28 @@ private fun PlanItemCreationSheet(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Text("Add item")
+                Text(if (existingItem == null) "Add item" else "Save item", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
     }
 }
 
 @Composable
-private fun ProjectCard(plan: ProjectPlan, plannedItems: List<br.inf.cepp.financemanager.model.ProjectItem>, onAddItem: () -> Unit = {}) {
+private fun ProjectCard(
+    plan: ProjectPlan,
+    plannedItems: List<br.inf.cepp.financemanager.model.ProjectItem>,
+    onAddItem: () -> Unit = {},
+    onEditPlan: () -> Unit = {},
+    onEditItem: (br.inf.cepp.financemanager.model.ProjectItem) -> Unit = {},
+    onDeleteItem: (br.inf.cepp.financemanager.model.ProjectItem) -> Unit = {}
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -344,13 +425,18 @@ private fun ProjectCard(plan: ProjectPlan, plannedItems: List<br.inf.cepp.financ
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(plan.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF111827))
-                Text(plan.status.name, fontSize = 12.sp, color = Color(0xFF0F766E))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(plan.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(plan.status.name, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = onEditPlan) {
+                    Text("Edit", color = MaterialTheme.colorScheme.secondary)
+                }
             }
 
             Text(
                 text = "${plan.startDate} — ${plan.endDate}",
-                color = Color(0xFF6B7280),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
 
@@ -358,34 +444,45 @@ private fun ProjectCard(plan: ProjectPlan, plannedItems: List<br.inf.cepp.financ
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Budget", color = Color(0xFF64748B))
-                Text("R$ %.2f".format(plan.budget), fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5))
+                Text("Budget", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("R$ %.2f".format(plan.budget), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Progress", color = Color(0xFF64748B))
-                Text("0%", fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
+                Text("Progress", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("0%", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.secondary)
             }
 
             if (plannedItems.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Planned expenses", fontWeight = FontWeight.SemiBold, color = Color(0xFF1F2937), fontSize = 14.sp)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Planned expenses", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                     plannedItems.forEach { item ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(item.description, color = Color(0xFF475569), fontSize = 13.sp)
-                            Text("R$ %.2f".format(item.budget), color = Color(0xFF4F46E5), fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                Text("R$ %.2f".format(item.budget), color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium, fontSize = 12.sp)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TextButton(onClick = { onEditItem(item) }) { Text("Edit") }
+                                TextButton(onClick = { onDeleteItem(item) }) { Text("Delete") }
+                            }
                         }
                     }
                 }
             }
 
-            Button(onClick = onAddItem, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Button(
+                onClick = onAddItem,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
                 Text("Add planned item")
             }
         }
@@ -396,21 +493,22 @@ private fun ProjectCard(plan: ProjectPlan, plannedItems: List<br.inf.cepp.financ
 @Composable
 private fun PlanCreationSheet(
     sheetState: androidx.compose.material3.SheetState,
+    existingPlan: ProjectPlan? = null,
     onDismiss: () -> Unit,
-    onSave: (String, LocalDate, LocalDate, Double) -> Unit
+    onSave: (ProjectPlan) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf(today().toString()) }
-    var endDate by remember { mutableStateOf("2026-09-30") }
-    var budget by remember { mutableStateOf("2500.00") }
+    var name by remember(existingPlan?.name) { mutableStateOf(existingPlan?.name ?: "") }
+    var startDate by remember(existingPlan?.name) { mutableStateOf(existingPlan?.startDate?.toString() ?: today().toString()) }
+    var endDate by remember(existingPlan?.name) { mutableStateOf(existingPlan?.endDate?.toString() ?: "2026-09-30") }
+    var budget by remember(existingPlan?.name) { mutableStateOf(existingPlan?.budget?.toString() ?: "2500.00") }
     val locale = androidx.compose.ui.platform.LocalLocale.current
     val datePlaceholder = if (locale.language == "pt") "dd/MM/yyyy" else "yyyy-MM-dd"
-    val utils = br.inf.cepp.financemanager.util.LocalPlatformUtils.current
+    val focusManager = LocalFocusManager.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -419,13 +517,15 @@ private fun PlanCreationSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("New project plan", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF111827))
+            Text(if (existingPlan == null) "New project plan" else "Edit project plan", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Project name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = existingPlan != null,
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
@@ -433,7 +533,8 @@ private fun PlanCreationSheet(
                 onValueChange = { startDate = it },
                 label = { Text("Start date ($datePlaceholder)") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(datePlaceholder) }
+                placeholder = { Text(datePlaceholder) },
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
@@ -441,15 +542,20 @@ private fun PlanCreationSheet(
                 onValueChange = { endDate = it },
                 label = { Text("End date ($datePlaceholder)") },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(datePlaceholder) }
+                placeholder = { Text(datePlaceholder) },
+                colors = financeOutlinedTextFieldColors()
             )
 
             OutlinedTextField(
                 value = budget,
-                onValueChange = { budget = it },
+                onValueChange = { if (it.isEmpty() || it.toDoubleOrNull() != null) budget = it },
                 label = { Text("Budget") },
                 modifier = Modifier.fillMaxWidth(),
-                prefix = { Text(utils.getCurrentCurrencySymbol() + " ") }
+                prefix = { Text(br.inf.cepp.financemanager.util.LocalPlatformUtils.current.getCurrentCurrencySymbol() + " ") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                singleLine = true,
+                colors = financeOutlinedTextFieldColors()
             )
 
             Button(
@@ -458,16 +564,22 @@ private fun PlanCreationSheet(
                     val parsedStart = runCatching { LocalDate.parse(startDate) }.getOrDefault(LocalDate(2026, 8, 1))
                     val parsedEnd = runCatching { LocalDate.parse(endDate) }.getOrDefault(LocalDate(2026, 9, 30))
                     if (name.isNotBlank()) {
-                        onSave(name.trim(), parsedStart, parsedEnd, parsedBudget)
+                        onSave(
+                            (existingPlan ?: ProjectPlan(name.trim(), parsedStart, parsedEnd, parsedBudget, ProjectStatus.ACTIVE)).copy(
+                                startDate = parsedStart,
+                                endDate = parsedEnd,
+                                budget = parsedBudget
+                            )
+                        )
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
-                Text("Save plan")
+                Text(if (existingPlan == null) "Save plan" else "Update plan", color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
     }

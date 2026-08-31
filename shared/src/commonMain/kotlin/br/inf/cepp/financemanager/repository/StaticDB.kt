@@ -11,15 +11,45 @@ val financeInstitutions = listOf(
 )
 
 val allCategories = mutableListOf(
-    ExpenseCategory("Groceries", HexColor("#F59E0B"), "shopping-cart"),
-    ExpenseCategory("Transport", HexColor("#3B82F6"), "car"),
-    ExpenseCategory("Health", HexColor("#EF4444"), "heart"),
-    ExpenseCategory("Subscriptions", HexColor("#8B5CF6"), "gamepad-2")
+    ExpenseCategory("Baby", HexColor("#1F5A82"), "baby"),
+    ExpenseCategory("Beauty", HexColor("#2F80C0"), "sparkles"),
+    ExpenseCategory("Bills", HexColor("#123A5A"), "file-text"),
+    ExpenseCategory("Car", HexColor("#1F5A82"), "car"),
+    ExpenseCategory("Clothing", HexColor("#2F80C0"), "shirt"),
+    ExpenseCategory("Education", HexColor("#123A5A"), "book-open"),
+    ExpenseCategory("Electronics", HexColor("#1F5A82"), "cpu"),
+    ExpenseCategory("Entertainment", HexColor("#2F80C0"), "clapperboard"),
+    ExpenseCategory("Food", HexColor("#287A5A"), "shopping-cart"),
+    ExpenseCategory("Health", HexColor("#287A5A"), "heart"),
+    ExpenseCategory("Insurance", HexColor("#123A5A"), "shield"),
+    ExpenseCategory("Shopping", HexColor("#2F80C0"), "shopping-bag"),
+    ExpenseCategory("Social", HexColor("#1F5A82"), "users"),
+    ExpenseCategory("Sport", HexColor("#287A5A"), "trophy"),
+    ExpenseCategory("Tax", HexColor("#123A5A"), "calculator"),
+    ExpenseCategory("Telephone", HexColor("#2F80C0"), "phone"),
+    ExpenseCategory("Transportation", HexColor("#1F5A82"), "bus-front")
+)
+
+val allIncomeCategories = listOf(
+    IncomeCategory.AWARDS,
+    IncomeCategory.COUPONS,
+    IncomeCategory.DIVIDEND,
+    IncomeCategory.GRANTS,
+    IncomeCategory.LOTTERY,
+    IncomeCategory.REFUNDS,
+    IncomeCategory.RENTAL,
+    IncomeCategory.SALARY,
+    IncomeCategory.SALE
 )
 
 val allAccounts = listOf(
     Account("Checking", AccountType.CHECKING, financeInstitutions[0], "0001", "12345-6", "PIX", 2500.0, 5, 1450.0, HexColor("#22C55E"), "dollar-sign"),
     Account("Credit Card", AccountType.CREDIT, financeInstitutions[1], "0002", "98765-4", "", 6000.0, 12, -320.5, HexColor("#EF4444"), "credit-card")
+)
+
+val allIncomes = listOf(
+    Income(description = "Salary", category = IncomeCategory.SALARY, date = LocalDate(2026, 8, 1), amount = 4200.0, source = ExpenseSource.MANUAL),
+    Income(description = "Rental payment", category = IncomeCategory.RENTAL, date = LocalDate(2026, 8, 10), amount = 900.0, source = ExpenseSource.MANUAL, status = ExpenseStatus.PLANNED, recurrence = RecurrenceRule(RecurrenceFrequency.MONTHLY, interval = 1))
 )
 
 val allExpenses = listOf(

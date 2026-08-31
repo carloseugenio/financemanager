@@ -10,6 +10,7 @@ import br.inf.cepp.financemanager.repository.*
     entities = [
         Person::class,
         Expense::class,
+        Income::class,
         Account::class,
         ExpenseCategory::class,
         ExpenseItem::class,
@@ -18,12 +19,13 @@ import br.inf.cepp.financemanager.repository.*
         FinanceInstitution::class,
         RecurringExpenseState::class,
     ],
-    version = 4
+    version = 6
 )
 @TypeConverters(DatabaseConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun personDao(): PersonDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun incomeDao(): IncomeDao
     abstract fun accountDao(): AccountDao
     abstract fun institutionDao(): FinanceInstitutionDao
     abstract fun expenseCategoryDao(): ExpenseCategoryDao

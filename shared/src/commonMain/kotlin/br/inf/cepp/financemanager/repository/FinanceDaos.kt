@@ -3,6 +3,7 @@ package br.inf.cepp.financemanager.repository
 import androidx.room.*
 import br.inf.cepp.financemanager.model.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 
 @Dao
 interface AccountDao {
@@ -50,12 +51,36 @@ interface ExpenseItemDao {
 }
 
 @Dao
+interface IncomeDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(income: Income): Long
+
+    @Update
+    suspend fun update(income: Income)
+
+    @Query("SELECT * FROM incomes ORDER BY date DESC")
+    fun getAll(): Flow<List<Income>>
+
+    @Query("SELECT * FROM incomes WHERE date BETWEEN :startDate AND :endDate ORDER BY date DESC")
+    fun getByDateRange(startDate: LocalDate, endDate: LocalDate): Flow<List<Income>>
+
+    @Query("SELECT * FROM incomes WHERE category = :category ORDER BY date DESC")
+    fun getByCategory(category: IncomeCategory): Flow<List<Income>>
+
+    @Query("SELECT * FROM incomes WHERE status = :status ORDER BY date DESC")
+    fun getByStatus(status: ExpenseStatus): Flow<List<Income>>
+}
+
+@Dao
 interface ProjectDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlan(plan: ProjectPlan)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItem(item: ProjectItem)
+
+    @Delete
+    suspend fun deleteItem(item: ProjectItem)
 
     @Query("SELECT * FROM project_plans")
     fun getAllPlans(): Flow<List<ProjectPlan>>

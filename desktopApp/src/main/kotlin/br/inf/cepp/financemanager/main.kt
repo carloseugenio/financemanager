@@ -2,19 +2,25 @@ package br.inf.cepp.financemanager
 
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-//import br.inf.cepp.financemanager.di.initKoin
+import br.inf.cepp.financemanager.scheduler.DesktopRecurringExpenseScheduler
 
-fun main() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        alwaysOnTop = true,
-        title = "FinanceManager",
-    ) {
-        // 1. Initialize Koin graph first
-//        initKoin()
+private fun installExceptionHandler() {
+    Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+        throwable.printStackTrace()
+    }
+}
 
-            // 2. Start your orchestrator workflow
-        FinanceManager().Start()
+fun main() {
+    installExceptionHandler()
+    DesktopRecurringExpenseScheduler().start()
+    application {
+        Window(
+            onCloseRequest = ::exitApplication,
+            alwaysOnTop = true,
+            title = "FinanceManager",
+        ) {
+            FinanceManager().Start(forceDarkTheme = true)
+        }
     }
 }
 
@@ -24,6 +30,6 @@ fun mainOld() = application {
         alwaysOnTop = true,
         title = "FinanceManager",
     ) {
-        FinanceManager().Start()
+        FinanceManager().Start(forceDarkTheme = true)
     }
 }
