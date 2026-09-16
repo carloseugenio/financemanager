@@ -5,9 +5,9 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    // 👇 ADD THIS LINE TO ACTIVATE THE COMPILER EXTENSION
+    // Activate compiler serialization plugin
     kotlin("plugin.serialization")
-    // Koin compiler
+    // Activate the Koin compiler plugin
     alias(libs.plugins.koin.compiler)
     // Room
     alias(libs.plugins.google.devtools.ksp)

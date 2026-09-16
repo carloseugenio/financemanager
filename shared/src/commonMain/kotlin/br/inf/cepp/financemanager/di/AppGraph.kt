@@ -21,7 +21,10 @@ import br.inf.cepp.financemanager.ui.screen.ReconciliationViewModel
 import br.inf.cepp.financemanager.ui.screen.ExportViewModel
 import br.inf.cepp.financemanager.ui.screen.ExpensesViewModel
 
-// 🚀 Explicitly bind the ViewModel so it is guaranteed to load without compiler magic
+/**
+ * Explicit module configuration. Bind the ViewModel so it is guaranteed to load
+ * without compiler magic.
+ */
 val appModule = module {
     single<AppDatabase> {
         getDatabaseBuilder()

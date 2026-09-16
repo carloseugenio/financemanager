@@ -46,3 +46,12 @@ allprojects {
     }
 }
 
+tasks.register("bc") {
+    description = "Quick assemble for all needed modules (no tests)"
+    dependsOn(
+        ":shared:assemble",
+        ":androidApp:assemble",
+        ":desktopApp:assemble"
+    )
+}
+

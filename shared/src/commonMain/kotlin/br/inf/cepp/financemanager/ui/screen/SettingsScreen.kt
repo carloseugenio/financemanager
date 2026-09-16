@@ -30,11 +30,24 @@ import androidx.compose.ui.unit.sp
 import br.inf.cepp.financemanager.util.AppSettings
 import br.inf.cepp.financemanager.util.DateEntryMode
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val dateEntryMode by AppSettings.dateEntryMode.collectAsState()
 
+    SettingsScreenContent(
+        dateEntryMode = dateEntryMode,
+        onDateEntryModeChange = { AppSettings.setDateEntryMode(it) },
+        onBack = onBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun SettingsScreenContent(
+    dateEntryMode: DateEntryMode,
+    onDateEntryModeChange: (DateEntryMode) -> Unit,
+    onBack: () -> Unit
+) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -53,7 +66,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-        color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background
         ) {
             Column(
                 modifier = Modifier
@@ -72,14 +85,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                     label = "Free hand date entry",
                     description = "Type day, month and year directly",
                     selected = dateEntryMode == DateEntryMode.FREE_HAND,
-                    onSelect = { AppSettings.setDateEntryMode(DateEntryMode.FREE_HAND) }
+                    onSelect = { onDateEntryModeChange(DateEntryMode.FREE_HAND) }
                 )
 
                 DateEntryOption(
                     label = "Date picker mode",
                     description = "Choose values from year, month and day pickers",
                     selected = dateEntryMode == DateEntryMode.PICKER,
-                    onSelect = { AppSettings.setDateEntryMode(DateEntryMode.PICKER) }
+                    onSelect = { onDateEntryModeChange(DateEntryMode.PICKER) }
                 )
             }
         }

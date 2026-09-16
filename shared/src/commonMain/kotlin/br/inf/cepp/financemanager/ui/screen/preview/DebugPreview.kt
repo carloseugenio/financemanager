@@ -1,4 +1,4 @@
-package br.inf.cepp.financemanager.ui.screen
+package br.inf.cepp.financemanager.ui.screen.preview
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import br.inf.cepp.financemanager.util.today
+import br.inf.cepp.financemanager.ui.screen.PreviewAppTheme
 
 val LocalDebugLog = staticCompositionLocalOf { { _: String -> } }
 

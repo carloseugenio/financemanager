@@ -23,13 +23,3 @@ fun main() {
         }
     }
 }
-
-fun mainOld() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        alwaysOnTop = true,
-        title = "FinanceManager",
-    ) {
-        FinanceManager().Start(forceDarkTheme = true)
-    }
-}

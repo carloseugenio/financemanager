@@ -1,4 +1,4 @@
-# Rival Features
+# Rival Features - My Money
 
 ## Feature list
 
@@ -92,4 +92,13 @@ Displays categories per type. Option to Add a new category (type, name, icon)
 - Tax
 - Telephone
 - Transportation
+
+
+## Rival Despessas
+
+- https://despezzas.com/?gad_source=1&gad_campaignid=24067869534&gbraid=0AAAABDqCMjzatMtIqfQODGm5HpYxXkiOh&gclid=CjwKCAjwsrbTBhAvEiwA0Bpp4T-GQF8n7EBMB8rhTLVtG6V-nJkowyjqw9P4CsZuDt9k4Euh4NdsORoCn44QAvD_BwE
+
+## Rival ContasOnline
+
+- https://www.contasonline.com.br/pessoal/?utm_source=google&utm_medium=cpc&utm_campaign=google-pessoal-max&utm_content=familiar&gad_source=1&gad_campaignid=22724798536&gbraid=0AAAAA9rRH7kNNp4ek3jnMFiVQjjI5X4Os&gclid=CjwKCAjwsrbTBhAvEiwA0Bpp4fzURJY5r3hUZRcqth0eEHAKdYn13UVXnDKk8MMJKCHUNJkG4iZx_hoCU-YQAvD_BwE
 

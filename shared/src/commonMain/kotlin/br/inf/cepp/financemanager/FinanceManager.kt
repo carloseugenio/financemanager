@@ -21,6 +21,11 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.getKoin
 import org.koin.dsl.koinConfiguration
 
+/**
+ * The [FinanceManager] class is the entry point for the Finance Manager application. It sets up
+ * the Koin dependency injection framework, initializes the database if needed, and starts the
+ * main application navigation within a Compose UI.
+ */
 class FinanceManager {
 
     companion object {
@@ -29,7 +34,7 @@ class FinanceManager {
 
     @Preview
     @Composable
-    fun Start(forceDarkTheme: Boolean = false) {
+    fun Start(forceDarkTheme: Boolean = true) {
         // 🚀 Load the direct module variable directly inside your configuration block
         val koinConfig = koinConfiguration {
             modules(appModule)

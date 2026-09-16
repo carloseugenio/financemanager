@@ -1,5 +1,6 @@
 package br.inf.cepp.financemanager
 
+import br.inf.cepp.financemanager.domain.CashflowSummary
 import br.inf.cepp.financemanager.model.Account
 import br.inf.cepp.financemanager.model.Expense
 import br.inf.cepp.financemanager.model.ExpenseCategory
@@ -14,7 +15,6 @@ import br.inf.cepp.financemanager.model.ProjectItem
 import br.inf.cepp.financemanager.model.ProjectPlan
 import br.inf.cepp.financemanager.model.ProjectStatus
 import br.inf.cepp.financemanager.repository.IFinanceService
-import br.inf.cepp.financemanager.domain.CashflowSummary
 import br.inf.cepp.financemanager.ui.screen.DashboardViewModel
 import br.inf.cepp.financemanager.ui.screen.emptyExpensesMessage
 import br.inf.cepp.financemanager.ui.screen.nextMonth
@@ -22,6 +22,7 @@ import br.inf.cepp.financemanager.ui.screen.previousMonth
 import br.inf.cepp.financemanager.ui.util.HexColor
 import br.inf.cepp.financemanager.util.AppSettings
 import br.inf.cepp.financemanager.util.AppSettingsStorage
+import br.inf.cepp.financemanager.util.AppTheme
 import br.inf.cepp.financemanager.util.DateEntryMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -74,28 +75,40 @@ class NextPhaseVerificationTest {
             override fun getMonthlyExpensesData(month: Month): Flow<List<MonthlyExpensePerCategoryViewData>> =
                 flowOf(emptyList())
 
-            override fun getTotalExpensesWithCurrencySymbol(symbol: String, month: Month): Flow<String> =
+            override fun getTotalExpensesWithCurrencySymbol(
+                symbol: String,
+                month: Month
+            ): Flow<String> =
                 flowOf("$symbol 120.00")
 
-            override fun getTotalExpenses(month: Month): Flow<Double> = flowOf(if (month == Month.DECEMBER) 80.0 else 120.0)
+            override fun getTotalExpenses(month: Month): Flow<Double> =
+                flowOf(if (month == Month.DECEMBER) 80.0 else 120.0)
+
             override fun getAllIncomes(): Flow<List<Income>> = flowOf(emptyList())
             override fun getAllFinancialRecords(): Flow<List<FinancialRecord>> = flowOf(emptyList())
-            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(CashflowSummary(
-                incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                transactionCount = 0,
-                incomingCount = 0,
-                outgoingCount = 0
-            ))
+            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(
+                CashflowSummary(
+                    incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    transactionCount = 0,
+                    incomingCount = 0,
+                    outgoingCount = 0
+                )
+            )
+
             override fun getAccounts(): Flow<List<Account>> = flowOf(emptyList())
             override fun getAllExpenses(): Flow<List<Expense>> = flowOf(listOf(expense))
             override fun getDraftExpenses(): Flow<List<Expense>> = flowOf(emptyList())
             override fun getPlannedIncomes(): Flow<List<Income>> = flowOf(listOf(plannedIncome))
             override fun getCategories(): Flow<List<ExpenseCategory>> = flowOf(listOf(category))
             override fun getProjectPlans(): Flow<List<ProjectPlan>> = flowOf(emptyList())
-            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> = flowOf(emptyList())
-            override fun getPlannedExpenses(): Flow<List<ExpenseItem>> = flowOf(listOf(plannedExpense))
+            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> =
+                flowOf(emptyList())
+
+            override fun getPlannedExpenses(): Flow<List<ExpenseItem>> =
+                flowOf(listOf(plannedExpense))
+
             override suspend fun saveExpense(expense: Expense): Long = 1L
             override suspend fun saveIncome(income: Income): Long = 0L
             override suspend fun saveAccount(account: Account) = Unit
@@ -114,11 +127,11 @@ class NextPhaseVerificationTest {
 
         waitUntil {
             viewModel.totalSpentAmount.value == 120.0 &&
-                viewModel.previousMonthSpentAmount.value == 80.0 &&
-                viewModel.transactionCount.value == 1 &&
-                viewModel.plannedIncomes.value.size == 1 &&
-                viewModel.recentExpenses.value.isNotEmpty() &&
-                viewModel.isLoading.value == false
+                    viewModel.previousMonthSpentAmount.value == 80.0 &&
+                    viewModel.transactionCount.value == 1 &&
+                    viewModel.plannedIncomes.value.size == 1 &&
+                    viewModel.recentExpenses.value.isNotEmpty() &&
+                    viewModel.isLoading.value == false
         }
 
         assertEquals(120.0, viewModel.totalSpentAmount.value)
@@ -142,32 +155,52 @@ class NextPhaseVerificationTest {
         var savedCategory: ExpenseCategory? = null
         var deletedCategory: String? = null
         val fakeService = object : IFinanceService {
-            override fun getMonthlyExpensesData(month: Month): Flow<List<MonthlyExpensePerCategoryViewData>> = flowOf(emptyList())
-            override fun getTotalExpensesWithCurrencySymbol(symbol: String, month: Month): Flow<String> = flowOf("$symbol 0.00")
+            override fun getMonthlyExpensesData(month: Month): Flow<List<MonthlyExpensePerCategoryViewData>> =
+                flowOf(emptyList())
+
+            override fun getTotalExpensesWithCurrencySymbol(
+                symbol: String,
+                month: Month
+            ): Flow<String> = flowOf("$symbol 0.00")
+
             override fun getTotalExpenses(month: Month): Flow<Double> = flowOf(0.0)
             override fun getAllIncomes(): Flow<List<Income>> = flowOf(emptyList())
             override fun getAllFinancialRecords(): Flow<List<FinancialRecord>> = flowOf(emptyList())
-            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(CashflowSummary(
-                incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                transactionCount = 0,
-                incomingCount = 0,
-                outgoingCount = 0
-            ))
+            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(
+                CashflowSummary(
+                    incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    transactionCount = 0,
+                    incomingCount = 0,
+                    outgoingCount = 0
+                )
+            )
+
             override fun getAccounts(): Flow<List<Account>> = flowOf(emptyList())
             override fun getAllExpenses(): Flow<List<Expense>> = flowOf(emptyList())
             override fun getDraftExpenses(): Flow<List<Expense>> = flowOf(emptyList())
             override fun getCategories(): Flow<List<ExpenseCategory>> = flowOf(emptyList())
             override fun getProjectPlans(): Flow<List<ProjectPlan>> = flowOf(emptyList())
-            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> = flowOf(emptyList())
+            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> =
+                flowOf(emptyList())
+
             override fun getPlannedExpenses(): Flow<List<ExpenseItem>> = flowOf(emptyList())
             override suspend fun saveExpense(expense: Expense): Long = 0L
             override suspend fun saveIncome(income: Income): Long = 0L
             override suspend fun saveAccount(account: Account) = Unit
-            override suspend fun saveCategory(category: ExpenseCategory) { savedCategory = category }
-            override suspend fun updateCategory(category: ExpenseCategory) { savedCategory = category }
-            override suspend fun deleteCategory(categoryName: String) { deletedCategory = categoryName }
+            override suspend fun saveCategory(category: ExpenseCategory) {
+                savedCategory = category
+            }
+
+            override suspend fun updateCategory(category: ExpenseCategory) {
+                savedCategory = category
+            }
+
+            override suspend fun deleteCategory(categoryName: String) {
+                deletedCategory = categoryName
+            }
+
             override suspend fun saveProjectPlan(plan: ProjectPlan) = Unit
             override suspend fun saveProjectItem(item: ProjectItem) = Unit
             override suspend fun deleteProjectItem(item: ProjectItem) = Unit
@@ -193,25 +226,47 @@ class NextPhaseVerificationTest {
     fun projectsCanBeCreatedWithNamePeriodAndBudget() {
         var storedPlan: ProjectPlan? = null
         val fakeService = object : IFinanceService {
-            override fun getMonthlyExpensesData(month: Month): Flow<List<MonthlyExpensePerCategoryViewData>> = flowOf(emptyList())
-            override fun getTotalExpensesWithCurrencySymbol(symbol: String, month: Month): Flow<String> = flowOf("$symbol 0.00")
+            override fun getMonthlyExpensesData(month: Month): Flow<List<MonthlyExpensePerCategoryViewData>> =
+                flowOf(emptyList())
+
+            override fun getTotalExpensesWithCurrencySymbol(
+                symbol: String,
+                month: Month
+            ): Flow<String> = flowOf("$symbol 0.00")
+
             override fun getTotalExpenses(month: Month): Flow<Double> = flowOf(0.0)
             override fun getAllIncomes(): Flow<List<Income>> = flowOf(emptyList())
             override fun getAllFinancialRecords(): Flow<List<FinancialRecord>> = flowOf(emptyList())
-            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(CashflowSummary(
-                incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
-                transactionCount = 0,
-                incomingCount = 0,
-                outgoingCount = 0
-            ))
+            override fun getMonthlyCashflow(month: Month): Flow<CashflowSummary> = flowOf(
+                CashflowSummary(
+                    incomingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    outgoingTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    netTotal = br.inf.cepp.financemanager.domain.Money.zero("local"),
+                    transactionCount = 0,
+                    incomingCount = 0,
+                    outgoingCount = 0
+                )
+            )
+
             override fun getAccounts(): Flow<List<Account>> = flowOf(emptyList())
             override fun getAllExpenses(): Flow<List<Expense>> = flowOf(emptyList())
             override fun getDraftExpenses(): Flow<List<Expense>> = flowOf(emptyList())
             override fun getCategories(): Flow<List<ExpenseCategory>> = flowOf(emptyList())
-            override fun getProjectPlans(): Flow<List<ProjectPlan>> = flowOf(listOf(ProjectPlan("Kitchen", LocalDate(2026, Month.SEPTEMBER, 1), LocalDate(2026, Month.SEPTEMBER, 30), 1200.0, ProjectStatus.ACTIVE)))
-            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> = flowOf(emptyList())
+            override fun getProjectPlans(): Flow<List<ProjectPlan>> = flowOf(
+                listOf(
+                    ProjectPlan(
+                        "Kitchen",
+                        LocalDate(2026, Month.SEPTEMBER, 1),
+                        LocalDate(2026, Month.SEPTEMBER, 30),
+                        1200.0,
+                        ProjectStatus.ACTIVE
+                    )
+                )
+            )
+
+            override fun getProjectItems(planName: String): Flow<List<ProjectItem>> =
+                flowOf(emptyList())
+
             override fun getPlannedExpenses(): Flow<List<ExpenseItem>> = flowOf(emptyList())
             override suspend fun saveExpense(expense: Expense): Long = 0L
             override suspend fun saveIncome(income: Income): Long = 0L
@@ -219,7 +274,10 @@ class NextPhaseVerificationTest {
             override suspend fun saveCategory(category: ExpenseCategory) = Unit
             override suspend fun updateCategory(category: ExpenseCategory) = Unit
             override suspend fun deleteCategory(categoryName: String) = Unit
-            override suspend fun saveProjectPlan(plan: ProjectPlan) { storedPlan = plan }
+            override suspend fun saveProjectPlan(plan: ProjectPlan) {
+                storedPlan = plan
+            }
+
             override suspend fun saveProjectItem(item: ProjectItem) = Unit
             override suspend fun deleteProjectItem(item: ProjectItem) = Unit
             override suspend fun confirmExpense(expenseId: Long) = Unit
@@ -227,12 +285,42 @@ class NextPhaseVerificationTest {
         }
 
         val viewModel = br.inf.cepp.financemanager.ui.screen.ProjectsViewModel(fakeService)
-        val plan = ProjectPlan("Kitchen", LocalDate(2026, Month.SEPTEMBER, 1), LocalDate(2026, Month.SEPTEMBER, 30), 1200.0, ProjectStatus.ACTIVE)
+        val plan = ProjectPlan(
+            "Kitchen",
+            LocalDate(2026, Month.SEPTEMBER, 1),
+            LocalDate(2026, Month.SEPTEMBER, 30),
+            1200.0,
+            ProjectStatus.ACTIVE
+        )
         viewModel.savePlan(plan)
         Thread.sleep(100)
         assertEquals("Kitchen", viewModel.plans.value.firstOrNull()?.name ?: "Kitchen")
         assertEquals("Kitchen", plan.name)
     }
+
+    @Test
+    fun appSettingsPersistAndRestoreTheme() {
+        AppSettings.setTheme(AppTheme.DARK)
+        assertEquals(AppTheme.DARK, AppSettings.theme.value)
+
+        val reloaded = br.inf.cepp.financemanager.util.AppSettingsStorage.loadTheme()
+        assertEquals(AppTheme.DARK, reloaded)
+
+        AppSettings.setTheme(AppTheme.LIGHT)
+        assertEquals(AppTheme.LIGHT, AppSettings.theme.value)
+    }
+
+    @Test
+    fun settingsPreferencesAllowLightAndDarkThemes() {
+        AppSettings.setTheme(AppTheme.LIGHT)
+        assertEquals(AppTheme.LIGHT, AppSettings.theme.value)
+        assertEquals(AppTheme.LIGHT, AppSettingsStorage.loadTheme())
+
+        AppSettings.setTheme(AppTheme.DARK)
+        assertEquals(AppTheme.DARK, AppSettings.theme.value)
+        assertEquals(AppTheme.DARK, AppSettingsStorage.loadTheme())
+    }
+
 
     @Test
     fun appSettingsPersistAndRestoreDateEntryMode() {
@@ -279,4 +367,5 @@ class NextPhaseVerificationTest {
         }
         assertTrue(condition())
     }
+
 }

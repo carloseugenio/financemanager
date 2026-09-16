@@ -1,4 +1,4 @@
-package br.inf.cepp.financemanager.ui.screen
+package br.inf.cepp.financemanager.ui.screen.preview
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import br.inf.cepp.financemanager.repository.plannedExpenses
 import br.inf.cepp.financemanager.repository.recentExpenses
 import br.inf.cepp.financemanager.ui.components.ExpenseSectionCard
+import br.inf.cepp.financemanager.ui.screen.PreviewAppTheme
 import com.composables.icons.lucide.Calendar
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.TrendingDown
